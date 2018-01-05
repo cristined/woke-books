@@ -13,7 +13,7 @@ def get_book_data(df, save_dir, api_key):
         print(book_id)
         cur_path = '{}/{}{}'.format(save_dir, book_id, '.xml')
         r = requests.get(book_url).text.encode('utf-8')
-        with open(cur_path, 'w') as f:
+        with open(cur_path, 'wb') as f:
             f.write(r)
         time.sleep(1)
 
@@ -47,6 +47,6 @@ def save_author_xml(content, save_dir, api_key):
 
 if __name__ == '__main__':
     df_books = pd.read_csv('../data/books.csv')
-    api_key = ''
+    api_key = os.environ['GOODREADS_API_KEY']
     save_dir = '../data/book_data'
     get_book_data(df_books[:5], save_dir, api_key)
