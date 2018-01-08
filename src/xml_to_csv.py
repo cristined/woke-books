@@ -9,6 +9,12 @@ import csv
 
 
 def get_text(item):
+    '''
+    INPUT
+    - XML item
+    OUTPUT
+    - Text if possible, otherwise None
+    '''
     try:
         return item.text
     except AttributeError:
@@ -16,6 +22,13 @@ def get_text(item):
 
 
 def get_author_book_csv(file, csvfile):
+    '''
+    INPUT
+    - XML file to process
+    - CSV to output
+    OUTPUT
+    - another line on the csv file
+    '''
     parser = ElementTree.XMLParser(encoding="utf-8")
     tree = ElementTree.parse(file, parser=parser)
     root = tree.getroot()
@@ -29,13 +42,19 @@ def get_author_book_csv(file, csvfile):
 
 
 def get_book_csv(file, csvfile):
+    '''
+    INPUT
+    - XML file to process
+    - CSV to output
+    OUTPUT
+    - another line on the csv file
+    '''
     parser = ElementTree.XMLParser(encoding="utf-8")
     tree = ElementTree.parse(file, parser=parser)
     root = tree.getroot()
     for book in root.findall('book'):
         book_id = book.find('id')
         title = book.find('title')
-        print(get_text(title))
         title_without_series = book.find('title_without_series')
         isbn = book.find('isbn')
         isbn13 = book.find('isbn13')
@@ -47,10 +66,22 @@ def get_book_csv(file, csvfile):
         work_id = book.find('work/id')
         best_book_id = book.find('work/best_book_id')
         original_title = book.find('work/original_title')
-        csvfile.append(map(get_text, [book_id, title, title_without_series, isbn, isbn13, asin, country_code, language_code, description, work_id, best_book_id, original_title]))
+        csvfile.append(map(get_text, [book_id, title, title_without_series,
+                                      isbn, isbn13, asin, country_code,
+                                      language_code, description, work_id,
+                                      best_book_id, original_title]))
 
 
 def create_csv(xml_func, directory, col, new_csvname):
+    '''
+    INPUT
+    - the function to process the XML to csv
+    - the directory of with the XML to process
+    - columns for csv output
+    - output CSV name
+    OUTPUT
+    - new csv file
+    '''
     csv_list = []
     files_data = os.listdir(directory)
     error_lst = []
@@ -66,15 +97,12 @@ def create_csv(xml_func, directory, col, new_csvname):
 
 
 if __name__ == '__main__':
-    # directory = '../data/book_data'
-    # new_csvname = '../data/updated_books.csv'
     directory = 'book_data'
     new_csvname = 'updated_books.csv'
-    col = ['book_id', 'title', 'title_without_series', 'isbn', 'isbn13', 'asin', 'country_code', 'language_code', 'description', 'work_id', 'best_book_id', 'original_title']
+    col = ['book_id', 'title', 'title_without_series', 'isbn', 'isbn13',
+           'asin', 'country_code', 'language_code', 'description', 'work_id',
+           'best_book_id', 'original_title']
     create_csv(get_book_csv, directory, col, new_csvname)
-
-    # directory = '../data/book_data'
-    # new_csvname = '../data/author_books.csv'
 
     directory = 'book_data'
     new_csvname = 'author_books.csv'
