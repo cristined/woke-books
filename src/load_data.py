@@ -151,8 +151,27 @@ def get_amazon_ratings(json_file, dict_isbn_best_id):
     pass
 
 
+def get_goodread_data(ratings_csv, books_csv):
+    """
+    INPUT:
+    From Kaggle dataset
+    - ratings_csv - book_id (nothing to do with goodreads), user_id (who knows),
+      rating
+    - book_csv - we will use this to get the Kaggle book ID to the goodreads
+      best book id
+    OUTPUT:
+    DataFrame with the following columns:
+    'user_id','book_id','rating'
+    """
+    df_ratings = pd.read_csv(ratings_csv)
+    df_books = pd.read_csv(books_csv, usecols=['book_id', 'best_book_id'])
+    dict_best_id = df_books.set_index(['book_id'])['best_book_id'].to_dict()
+    df_ratings['book_id'] = df_ratings['book_id'].map(lambda x: dict_best_id.get(x))
+    return df_ratings
+
+
 if __name__ == '__main__':
-    # Created from GoodReads API, should be the top 10K rated books
+    # Created from GoodReads API
     book_file = 'data/books.csv'
     # Created from GoodReads API, and manual classification
     author_file = 'data/classified_authors.csv'
@@ -160,6 +179,9 @@ if __name__ == '__main__':
     author_book_file = 'data/author_books.csv'
     # Created from Amazon Review file for ASIN and GoodReads API
     asin_best_file = 'data/asin_best_book_id.csv'
+    # From Kaggle's Goodbooks-10K
+    k_rating_file = 'data/k_ratings.csv'
+    k_book_file = 'data/k_books.csv'
 
     df_books = get_books(book_file)
     df_authors = get_classified_authors(author_file)
@@ -168,3 +190,5 @@ if __name__ == '__main__':
 
     df_books_classified = merge_to_classify_books(df_authors_books, df_authors,
                                                   df_books)
+
+    df_k_ratings = get_goodread_data(k_rating_file, k_book_file)
