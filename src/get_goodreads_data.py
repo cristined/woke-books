@@ -74,3 +74,5 @@ if __name__ == '__main__':
     api_key = os.environ['GOODREADS_API_KEY']
     save_dir = '../data/book_data'
     get_book_data(df_books, save_dir, api_key)
+
+    user_books = get_user_read_books(1, api_key)
