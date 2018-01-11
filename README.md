@@ -1,7 +1,7 @@
 # Underrepresented Author Book Recommender
 
 ## Mission
-What I love about reading is it one of the few ways that we get a chance to see the world from another person's point of view. After reading _The Bluest Eye_ by Toni Morrison, my mind was completely blown and I could not believe I had never read anything like that. So obviously the first thing I did was an analysis on my own reading to break down the number of books I had read by author's race and gender. I saw that a huge percentage of books I read were written by white males and as much as I love everything that Neil Gaiman does it made me wish that I had a tool that could take my GoodReads read book ratings and recommend books that are to my taste but are by authors from more diverse backgrounds. Thus this project was born.
+
 
 ### Data
 I used two main data sources:
