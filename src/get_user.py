@@ -34,13 +34,28 @@ def get_user_read_books(user_id, api_key, page=1, ratings=[]):
     return pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
 
 
-def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings, df_books_classified):
+def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
+                                      df_books_classified):
+    """
+    INPUT:
+
+    OUTPUT:
+    Data Frame grouped by race and gender including these columns
+    'race'
+    'gender'
+    'authorbook_id' - count of unique author book id which is a compound key
+                    - if the book was written by multiple authors you will get
+                      one record per author
+                    - if you have read multiple books by an author it will
+                      count each one uniquely
+    'percentage'
+    """
     dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
     df_u_ratings['best_book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
     df_u_ratings = df_u_ratings[df_u_ratings['best_book_id'].isnull() == False]
     df_u_books_classified = pd.merge(df_u_ratings, df_books_classified,
-                                        left_on='best_book_id',
-                                        right_on='best_book_id', how='inner')
+                                     left_on='best_book_id',
+                                     right_on='best_book_id', how='inner')
     df_u_books_classified['authorbook_id'] = df_u_books_classified['best_book_id'].map(str) + ' ' + df_u_books_classified['author_id'].map(str)
     df_u_ab_classified = df_u_books_classified.groupby(['race','gender'])['authorbook_id'].nunique().reset_index()
     df_u_ab_classified['percentage'] = df_u_ab_classified['authorbook_id'] / df_u_ab_classified['authorbook_id'].sum()
@@ -48,6 +63,12 @@ def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings, df_boo
 
 
 def plot_user_authorbook_classified(df_u_ab_classified):
+    """
+    INPUT
+    DataFrame counting unique author book combos classified
+    OUTPUT
+    plots bar chart
+    """
     ax = df_u_ab_classified['authorbook_id'].plot(kind='bar',
                                     title="Books Read by Race and Gender",
                                     legend=False, fontsize=12)
