@@ -56,8 +56,6 @@ if __name__ == '__main__':
     dict_u_rate = df_user_ratings.set_index('book_id')['rating'].to_dict()
     user_ratings = [dict_u_rate.get(book, None) for book in items_matrix_books]
 
-    user_ratings = [dict_u_rate.get(book, None) for book in items_matrix_books]
-
     V = np.array(user_ratings).reshape(1, -1)
     H = np.array([factors for factors in items_matrix_factors]).T
 

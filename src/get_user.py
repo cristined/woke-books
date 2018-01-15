@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 import gzip
 import json
 import csv
@@ -9,7 +10,6 @@ import time
 import matplotlib.pyplot as plt
 import load_data
 from xml_to_csv import get_text
-
 
 def get_user_read_books(user_id, api_key, page=1, ratings=[]):
     '''
@@ -34,17 +34,23 @@ def get_user_read_books(user_id, api_key, page=1, ratings=[]):
     return pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
 
 
-def user_ratings_for_recommender(df_u_ratings, df_isbn_best_book_id):
+def user_ratings_for_recommender(df_u_ratings, df_isbn_best_book_id,
+                                 items_matrix_books):
     """
     INPUT:
+    - DataFrame with the user ratings
+    - Dictionary of ISBN to best book ID
+    - Array of book ID's we care about
     OUTPUT:
+    - Matrix with 0's for unread books
     """
     dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
     df_u_ratings['book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
     df_u_ratings = df_u_ratings[df_u_ratings['book_id'].isnull() == False]
     df_u_ratings['book_id'] = df_u_ratings['book_id'].map(lambda x: int(x))
-    df_u_ratings = df_u_ratings.drop(['isbn'], axis=1)
-    return df_u_ratings
+    dict_u_rate = df_u_ratings.set_index('book_id')['rating'].to_dict()
+    user_ratings = [dict_u_rate.get(book, 0) for book in items_matrix_books]
+    return user_ratings
 
 
 def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
@@ -104,13 +110,13 @@ if __name__ == '__main__':
     df_user_ratings = get_user_read_books(2624891, api_key)
 
     # Created from GoodReads API, should be the top 10K rated books
-    book_file = '../old_data/updated_books.csv'
+    book_file = '../data/updated_books.csv'
     # Created from GoodReads API, and manual classification
-    author_file = '../old_data/classified_authors.csv'
+    author_file = '../data/classified_authors.csv'
     # Created from GoodReads API
-    author_book_file = '../old_data/author_books.csv'
+    author_book_file = '../data/author_books.csv'
     # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = '../old_data/asin_best_book_id_take_2.csv'
+    asin_best_file = '../data/asin_best_book_id.csv'
 
     df_books = load_data.get_books(book_file)
     df_authors = load_data.get_classified_authors(author_file)
@@ -124,5 +130,11 @@ if __name__ == '__main__':
                                                 df_isbn_best_book_id,
                                                 df_user_ratings,
                                                 df_books_classified)
-    print(df_user_authorsbooks_classified)
-    plot_user_authorbook_classified(df_user_authorsbooks_classified)
+    # plot_user_authorbook_classified(df_user_authorsbooks_classified)
+
+    items_matrix = np.load('../data/item_matrix.npy')
+    items_matrix_books = items_matrix[::, 0]
+    matrix_u_rate = user_ratings_for_recommender(df_user_ratings,
+                                                 df_isbn_best_book_id,
+                                                 items_matrix_books)
+    print(matrix_u_rate)
