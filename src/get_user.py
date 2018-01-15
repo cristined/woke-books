@@ -34,6 +34,19 @@ def get_user_read_books(user_id, api_key, page=1, ratings=[]):
     return pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
 
 
+def user_ratings_for_recommender(df_u_ratings, df_isbn_best_book_id):
+    """
+    INPUT:
+    OUTPUT:
+    """
+    dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
+    df_u_ratings['book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
+    df_u_ratings = df_u_ratings[df_u_ratings['book_id'].isnull() == False]
+    df_u_ratings['book_id'] = df_u_ratings['book_id'].map(lambda x: int(x))
+    df_u_ratings = df_u_ratings.drop(['isbn'], axis=1)
+    return df_u_ratings
+
+
 def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
                                       df_books_classified):
     """

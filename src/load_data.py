@@ -80,10 +80,11 @@ def get_books_to_authors(csv_file):
     return df_authors_books
 
 
-def get_isbn_to_best_book_id(csv_file):
+def get_isbn_to_best_book_id(csv_file, our_best_book_ids=None):
     """
     INPUT:
     csv filename
+    set of the best book ID's we care about if we would like to limit the file
     OUTPUT:
     DataFrame with the following columns:
     'isbn', 'best_book_id'
@@ -92,6 +93,8 @@ def get_isbn_to_best_book_id(csv_file):
     df_isbn_best_book_id = pd.read_csv(csv_file, header=None,
                                        names=['isbn', 'best_book_id'])
     df_isbn_best_book_id = df_isbn_best_book_id[df_isbn_best_book_id['best_book_id'].isnull() == False]
+    if our_best_book_ids:
+        df_isbn_best_book_id = df_isbn_best_book_id[df_isbn_best_book_id['best_book_id'].map(lambda x: x in our_best_book_ids)]
     df_isbn_best_book_id['best_book_id'] = df_isbn_best_book_id['best_book_id'].map(lambda x: int(x))
     return df_isbn_best_book_id
 
@@ -128,7 +131,7 @@ def merge_to_classify_books(df_authors_books, df_authors, df_books):
     return df_books_classified
 
 
-def get_amazon_review_text(json_file, dict_isbn_best_id):
+def get_amazon_review_text(csv_file):
     """
     INPUT:
     - json file with Amazon reveiws
@@ -136,22 +139,31 @@ def get_amazon_review_text(json_file, dict_isbn_best_id):
     OUTPUT:
     Series of aggregated reviews grouped by GoodReads best book id
     """
-    pass
+    df_reviews = pd.read_csv('new_less_reviews.csv', header=None,
+                             names=['best_book_id', 'asin', 'summary',
+                                    'review_text'])
+    df_reviews = df_reviews[df_reviews['reviewText'].isnull() == False]
+    df_reviews_agg = df_reviews.groupby('best_book_id')['reviewText'].agg(lambda col: ' '.join(col))
+    return df_reviews_agg
 
 
-def get_amazon_ratings(json_file, dict_isbn_best_id):
+def get_amazon_ratings(csv_file):
     """
     INPUT:
-    - json file with Amazon reveiws
+    - csv file with Amazon reveiws
     - dictionary of ISBNs (subset we care about) to GoodReads best book id
     OUTPUT:
     DataFrame with the following columns:
     'user_id', 'book_id', 'rating'
     """
-    pass
+    df_a_ratings = pd.read_csv(csv_file, header=None,
+                               names=['book_id', 'asin', 'user_ID',
+                                      'helpful', 'rating', 'unix_review_time'])
+    df_a_ratings = df_a_ratings[['user_id', 'book_id', 'rating']]
+    return df_a_ratings
 
 
-def get_goodread_data(ratings_csv, books_csv):
+def get_goodread_data(csv_file, books_csv):
     """
     INPUT:
     From Kaggle dataset
@@ -172,7 +184,7 @@ def get_goodread_data(ratings_csv, books_csv):
 
 if __name__ == '__main__':
     # Created from GoodReads API
-    book_file = 'data/books.csv'
+    book_file = 'data/updated_books.csv'
     # Created from GoodReads API, and manual classification
     author_file = 'data/classified_authors.csv'
     # Created from GoodReads API
@@ -180,15 +192,21 @@ if __name__ == '__main__':
     # Created from Amazon Review file for ASIN and GoodReads API
     asin_best_file = 'data/asin_best_book_id.csv'
     # From Kaggle's Goodbooks-10K
-    k_rating_file = 'data/k_ratings.csv'
-    k_book_file = 'data/k_books.csv'
+    k_rating_file = 'data/goodbooks-10k/ratings.csv'
+    k_book_file = 'data/goodbooks-10k/books.csv'
+    # Created from Amazon Review file
+    a_ratings_file = 'data/limited_amazon_ratings.csv'
+    a_reviews_file = 'data/limited_amazon_reviews.csv'
 
     df_books = get_books(book_file)
     df_authors = get_classified_authors(author_file)
     df_authors_books = get_books_to_authors(author_book_file)
-    df_isbn_best_book_id = get_isbn_to_best_book_id(asin_best_file)
+    our_best_book_ids = set(df_books['best_book_id'])
+    df_isbn_best_book_id = get_isbn_to_best_book_id(asin_best_file, our_best_book_ids)
 
     df_books_classified = merge_to_classify_books(df_authors_books, df_authors,
                                                   df_books)
 
     df_k_ratings = get_goodread_data(k_rating_file, k_book_file)
+    df_a_ratings = get_amazon_ratings(a_ratings_file)
+    df_reviews_agg = get_amazon_review_text(a_reviews_file)
