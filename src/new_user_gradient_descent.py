@@ -5,30 +5,16 @@ from sklearn.preprocessing import StandardScaler
 
 class GradientDescent(object):
     """
-    Perform the gradient descent optimization algorithm for an arbitrary
-    cost function.
+    Perform the gradient descent optimization algorithm
     """
 
-    def __init__(self, #cost, gradient, predict_func,
-                 #fit_intercept=False,
-                 # standardize=False,
+    def __init__(self,
                  alpha=0.01,
-                 num_iterations=10000
-                 #step_size=None,
-                 #cost_func_parameters=None):
+                 num_iterations=1000
                  ):
         """Initialize the instance attributes of a GradientDescent object.
         Parameters
         ----------
-        cost: A function with signature (2d np.array, 1d np.array, 1d np.array)
-          -> 1d np.array
-            The cost function to be minimized.
-        gradient: A function with signature (2d np.array, 1d np.array, 1d np.array)
-          -> 1d np.array
-            The gradient of the cost function.
-        predict_func: A function of signature (2d np.array, 1d np.array) -> 1d
-          np.array
-            A function to make predictions after the optimizaiton has converged.
         alpha: float
             The learning rate.
         num_iterations: integer.
@@ -46,9 +32,9 @@ class GradientDescent(object):
         """Run the gradient descent algorithm for num_iterations repititions.
         Parameters
         ----------
-        X: ndarray, shape (n_samples, n_features)
+        x: ndarray, sparse rating matrix
             The training data for the optimization.
-        y: ndarray, shape (n_samples, ).
+        V: ndarray, items data
             The training response for the optimization.
         Returns
         -------
@@ -62,13 +48,25 @@ class GradientDescent(object):
         return self
 
     def gradient(self, x, V):
-        u = self.u
+        """Run the gradient descent algorithm for one repititions.
+        Parameters
+        ----------
+        x: ndarray, sparse rating matrix
+            The training data for the optimization.
+        V: ndarray, items data
+            The training response for the optimization.
+        Returns
+        -------
+        self:
+            The next gradient in U
+        """
+        grad = self.u
         for i, rating in enumerate(x):
             if rating:
                 for j, item in enumerate(u[0]):
                     s = - 2 * V[j][i] * (rating - np.dot(self.u, V.T[i]))
-                    u[0][j] -= (s * .01)
-        return u
+                    grad[0][j] -= (s * self.alpha)
+        return grad
 
 
 if __name__ == '__main__':

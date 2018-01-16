@@ -2,41 +2,41 @@ import numpy as np
 import pandas as pd
 
 
-class NMF(object):
+class NGD(object):
 
-    def __init__(self, max_iter=50, alpha=0.5, eps=1e-6):
-        self.max_iter = max_iter
+    def __init__(self, num_iterations=50, alpha=0.1, eps=1e-6):
+        self.num_iterations = num_iterations
         self.alpha = alpha
         self.eps = eps
 
     def _fit_one(self):
         '''
-        Do one ALS iteration. This method updates self.W
+        Do one ALS iteration. This method updates self.u
         and returns None.
         '''
-        for i, rating in enumerate(self.V.T):
+        for i, rating in enumerate(self.x.T):
             if rating:
-                W_new = np.linalg.lstsq(self.H.T[i].reshape((1, -1)),
-                                        np.array([rating]))[0].T.clip(min=1e-6)
-                self.W = self.W * (1.0 - self.alpha) + W_new * self.alpha
+                u_new = np.linalg.lstsq(self.V.T[i].reshape((1, -1)),
+                                        np.array([rating]))[0].T.clip(min=self.eps)
+                self.u = self.u * (1.0 - self.alpha) + u_new * self.alpha
 
-    def fit(self, V, H):
+    def fit(self, x, V):
+        self.x = x
         self.V = V
-        self.H = H
-        self.W = np.random.rand(self.V.shape[0], self.H.shape[0])
+        self.u = np.random.rand(self.x.shape[0], self.V.shape[0])
         i = 0
-        while i < self.max_iter:
+        while i < self.num_iterations:
             i += 1
             self._fit_one()
 
     def reconstruction_error(self):
         '''
-        Compute and return the reconstruction error of `V`
+        Compute and return the reconstruction error of `x`
         '''
         est = []
-        for i, rating in enumerate(self.V.T):
+        for i, rating in enumerate(self.x.T):
             if rating:
-                estimate = np.dot(self.W, self.H.T[i])
+                estimate = np.dot(self.u, self.V.T[i])
                 est.append(rating - estimate)
         return (np.array(est) ** 2).sum()
 
@@ -56,11 +56,11 @@ if __name__ == '__main__':
     dict_u_rate = df_user_ratings.set_index('book_id')['rating'].to_dict()
     user_ratings = [dict_u_rate.get(book, None) for book in items_matrix_books]
 
-    V = np.array(user_ratings).reshape(1, -1)
-    H = np.array([factors for factors in items_matrix_factors]).T
+    x = np.array(user_ratings).reshape(1, -1)
+    V = np.array([factors for factors in items_matrix_factors]).T
 
-    print(V.shape)
-    nmf = NMF()
-    nmf.fit(V, H)
+    print(x.shape)
+    ngd = NGD()
+    ngd.fit(x, V)
 
-    print(nmf.W)
+    print(ngd.u)
