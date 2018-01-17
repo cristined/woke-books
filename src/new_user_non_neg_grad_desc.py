@@ -3,8 +3,25 @@ import pandas as pd
 
 
 class NGD(object):
+    """
+    Perform the non-negative gradient descent optimization algorithm
+    """
 
     def __init__(self, num_iterations=50, alpha=0.1, eps=1e-6):
+        """Initialize the instance attributes of a NGD object.
+        Parameters
+        ----------
+        alpha: float
+            The learning rate.
+        num_iterations: integer.
+            Number of iterations to use in the descent.
+        eps: float
+            epsilon for clipping
+        Returns
+        -------
+        self:
+            The initialized NGD object.
+        """
         self.num_iterations = num_iterations
         self.alpha = alpha
         self.eps = eps
@@ -21,6 +38,9 @@ class NGD(object):
                 self.u = self.u * (1.0 - self.alpha) + u_new * self.alpha
 
     def fit(self, x, V):
+        '''
+        Do number of iterations of ALS iteration.
+        '''
         self.x = x
         self.V = V
         self.u = np.random.rand(self.x.shape[0], self.V.shape[0])

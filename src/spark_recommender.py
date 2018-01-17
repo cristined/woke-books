@@ -10,16 +10,36 @@ import load_data
 import get_user
 
 
-def train_recommender(train):
+def train_recommender(train, regParam=.1, rank=10):
     als_model = ALS(userCol='user_id',
                     itemCol='book_id',
                     ratingCol='rating',
                     nonnegative=True,
-                    regParam=0.1,
-                    rank=10
+                    regParam=regParam,
+                    rank=rank
                     )
     recommender = als_model.fit(train)
     return recommender
+
+
+def grid_search_rec(train, test, regParam_list, rank_list):
+    min_err = float('inf')
+    best_regParam = None
+    best_rank = None
+    best_recommender = None
+    for regParam in regParam_list:
+        for rank in rank_list:
+            recommender = train_recommender(train, regParam=regParam, rank=rank)
+            rmse = recommender_rmse(recommender, test)
+            print("regParam: {}, rank: {}\nRMSE: {}".format(regParam, rank, rmse))
+            print("--"*20)
+            if rmse < min_err:
+                min_err = rmse
+                best_regParam = regParam
+                best_rank = rank
+                best_recommender = recommender
+    print("Best regParam: {}\nBest rank: {}\nBest RMSE: {}".format(best_regParam, best_rank, min_err))
+    return best_recommender
 
 
 def save_matrix(recommender):
@@ -32,15 +52,12 @@ def recommender_rmse(recommender, test):
     predictions_df = predictions.toPandas()
     train_df = train.toPandas()
     predictions_df = predictions.toPandas().fillna(train_df['rating'].mean())
-    predictions_df['squared_error'] = (predictions_df['rating'] - predictions_df['prediction'])**2
+    predictions_df['squared_error'] = (predictions_df['rating'] -
+                                       predictions_df['prediction']) ** 2
     return np.sqrt(sum(predictions_df['squared_error']) / len(predictions_df))
 
 
-def main():
-    spark = pyspark.sql.SparkSession.builder.getOrCreate()
-    sc = spark.sparkContext
-    spark, sc
-
+def load_books_data():
     # Created from GoodReads API
     book_file = 'updated_books.csv'
     # Created from GoodReads API, and manual classification
@@ -48,7 +65,7 @@ def main():
     # Created from GoodReads API
     author_book_file = 'author_books.csv'
     # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = 'asin_best_book_id_take_3.csv'
+    asin_best_file = 'asin_best_book_id.csv'
     # From Kaggle's Goodbooks-10K
     k_rating_file = 'ratings.csv'
     k_book_file = 'books.csv'
@@ -57,21 +74,27 @@ def main():
     df_authors = load_data.get_classified_authors(author_file)
     df_authors_books = load_data.get_books_to_authors(author_book_file)
     df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
-
     df_books_classified = load_data.merge_to_classify_books(df_authors_books, df_authors,
                                                   df_books)
-
     df_k_ratings = load_data.get_goodread_data(k_rating_file, k_book_file)
+    return df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings
+
+
+if __name__ == "__main__":
+    spark = pyspark.sql.SparkSession.builder.getOrCreate()
+    sc = spark.sparkContext
+    spark, sc
+
+    df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings = load_books_data()
 
     ratings_df = spark.createDataFrame(df_k_ratings)
 
-    train, test = ratings_df.randomSplit([0.8, 0.2], seed=427471138)
+    train, validate, test = ratings_df.randomSplit([0.6, 0.2, 0.2], seed=72)
 
-    recommender = train_recommender(train)
-    save_matrix(recommender)
+    regParam_list = [.01, 1]
+    rank_list = [5, 10, 15, 20]
+    best_recommender = grid_search_rec(train, validate, regParam_list, rank_list)
 
-    print("RMSE = {}".format(recommender_rmse(recommender,
-                                              test)))
+    # save_matrix(best_recommender)
 
-if __name__ == "__main__":
-    main()
+    # print("RMSE = {}".format(recommender_rmse(recommender, test)))

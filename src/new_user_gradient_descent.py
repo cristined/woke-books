@@ -63,7 +63,7 @@ class GradientDescent(object):
         grad = self.u
         for i, rating in enumerate(x):
             if rating:
-                for j, item in enumerate(u[0]):
+                for j, item in enumerate(grad[0]):
                     s = - 2 * V[j][i] * (rating - np.dot(self.u, V.T[i]))
                     grad[0][j] -= (s * self.alpha)
         return grad
