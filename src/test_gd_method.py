@@ -73,7 +73,7 @@ def plot_gd_ngd_actuals(user_row):
     print("NGD RMSE: ", ((actuals_u - ngd_u) ** 2).sum() ** .5)
 
 
-def test_rmse(no_obs, num_iterations=100, alpha=0.01):
+def test_rmse(random_rows, num_iterations=100, alpha=0.01):
     """
     For given number of observations get the error of the user matrix (u)
     for GD and NGD vs the actuals
@@ -81,7 +81,8 @@ def test_rmse(no_obs, num_iterations=100, alpha=0.01):
     actuals_u = []
     gd_u = []
     ngd_u = []
-    for rand_row in np.random.choice(len(user_matrix), no_obs, replace=False):
+    no_obs = len(random_rows)
+    for rand_row in random_rows:
         actuals_row, gd_row, ngd_row = test_gd_ngd_actuals(rand_row, num_iterations, alpha)
         actuals_u.append(actuals_row)
         gd_u.append(gd_row)
@@ -99,9 +100,10 @@ def grid_search(num_obs, num_iters, alphas):
     best_iters = None
     best_alpha = None
     best_model = None
+    random_rows = np.random.choice(len(user_matrix), num_obs, replace=False)
     for iters in num_iters:
         for a in alphas:
-            gd_err, ngd_err = test_rmse(num_obs, num_iterations=iters, alpha=a)
+            gd_err, ngd_err = test_rmse(random_rows, num_iterations=iters, alpha=a)
             print('num_iterations={}, alpha={}'.format(iters, a))
             print("GD Error - ", gd_err)
             print("NGD Error - ", ngd_err)
@@ -130,6 +132,6 @@ if __name__ == '__main__':
 
     num_iters = [100, 500, 1000]
     alphas = [.01, .1, .5]
-    num_obs = 3000
+    num_obs = 500
 
     grid_search(num_obs, num_iters, alphas)

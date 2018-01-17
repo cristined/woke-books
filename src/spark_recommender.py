@@ -24,21 +24,23 @@ def train_recommender(train, regParam=.1, rank=10):
 
 def grid_search_rec(train, test, regParam_list, rank_list):
     min_err = float('inf')
+    min_err_top_5 = float('inf')
     best_regParam = None
     best_rank = None
     best_recommender = None
     for regParam in regParam_list:
         for rank in rank_list:
             recommender = train_recommender(train, regParam=regParam, rank=rank)
-            rmse = recommender_rmse(recommender, test)
-            print("regParam: {}, rank: {}\nRMSE: {}".format(regParam, rank, rmse))
+            rmse, rmse_top_5 = recommender_rmse(recommender, train, test)
+            print("regParam: {}, rank: {}\nRMSE: {}\nTop 5 RMSE: {}".format(regParam, rank, rmse, rmse_top_5))
             print("--"*20)
-            if rmse < min_err:
+            if rmse_top_5 < min_err_top_5:
                 min_err = rmse
+                min_err_top_5 = rmse_top_5
                 best_regParam = regParam
                 best_rank = rank
                 best_recommender = recommender
-    print("Best regParam: {}\nBest rank: {}\nBest RMSE: {}".format(best_regParam, best_rank, min_err))
+    print("Best regParam: {}\nBest rank: {}\nBest RMSE: {}\nTop 5 Best RMSE: {}".format(best_regParam, best_rank, min_err, min_err_top_5))
     return best_recommender
 
 
@@ -47,14 +49,21 @@ def save_matrix(recommender):
     np.save('user_matrix', recommender.userFactors.toPandas().as_matrix())
 
 
-def recommender_rmse(recommender, test):
+def recommender_rmse(recommender, train, test):
     predictions = recommender.transform(test)
     predictions_df = predictions.toPandas()
     train_df = train.toPandas()
     predictions_df = predictions.toPandas().fillna(train_df['rating'].mean())
     predictions_df['squared_error'] = (predictions_df['rating'] -
                                        predictions_df['prediction']) ** 2
-    return np.sqrt(sum(predictions_df['squared_error']) / len(predictions_df))
+    rmse = np.sqrt(sum(predictions_df['squared_error']) / len(predictions_df))
+    g = predictions_df.groupby('user_id')
+    top_5 = g.rating.transform(lambda x: x >= x.quantile(.95))
+    predictions_df = predictions_df[top_5 == 1]
+    predictions_df['squared_error_top_5'] = (predictions_df['rating'] -
+                                             predictions_df['prediction']) ** 2
+    rmse_top_5 = np.sqrt(sum(predictions_df['squared_error_top_5']) / len(predictions_df))
+    return rmse, rmse_top_5
 
 
 def load_books_data():
@@ -85,6 +94,22 @@ if __name__ == "__main__":
     sc = spark.sparkContext
     spark, sc
 
+    # Only training using GoodReads data because we will be predicting on
+    # GoodReads data and the datasets look different
+    # GoodReads Data:
+    # Books/User: 111.87
+    # 5 star 0.33%
+    # 4 star 0.36%
+    # 3 star 0.23%
+    # 2 star 0.06%
+    # 1 star 0.02%
+    # Amazon Data:
+    # Books/User: 3.98
+    # 5 star 0.56%
+    # 4 star 0.24%
+    # 3 star 0.11%
+    # 2 star 0.05%
+    # 1 star 0.04%
     df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings = load_books_data()
 
     ratings_df = spark.createDataFrame(df_k_ratings)

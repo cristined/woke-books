@@ -163,7 +163,7 @@ def get_amazon_ratings(csv_file):
     return df_a_ratings
 
 
-def get_goodread_data(csv_file, books_csv):
+def get_goodread_data(ratings_csv, books_csv):
     """
     INPUT:
     From Kaggle dataset
