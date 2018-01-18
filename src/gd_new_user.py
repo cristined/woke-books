@@ -3,6 +3,8 @@ import pandas as pd
 import load_data
 import get_user
 
+
+
 class GD(object):
     """
     Perform the non-negative gradient descent optimization algorithm

@@ -3,8 +3,7 @@ import pandas as pd
 import random
 # import matplotlib.pyplot as plt
 import load_data
-from new_user_gradient_descent import GradientDescent
-from new_user_non_neg_grad_desc import NGD
+from gd_new_user import GD
 
 
 def get_recommender_data():
@@ -28,30 +27,14 @@ def get_books_data():
     return df_user_ratings, df_books_gr, d_gb_best_id
 
 
-def user_ratings_by_id(user_id, df_user_ratings, d_gb_best_id, items_matrix_books):
+def user_ratings_by_id(user_id, df_user_ratings, d_gb_best_id):
     """
     Get user's ratings from the recommenders training data using
     the goodreads user ID
     """
     df_uratings = df_user_ratings[df_user_ratings['user_id'] == user_id]
-    df_uratings['best_book_id'] = df_uratings['book_id'].map(lambda x: d_gb_best_id.get(x, 0))
-    dict_u_rate = df_uratings.set_index('best_book_id')['rating'].to_dict()
-    user_ratings = [dict_u_rate.get(book, 0) for book in items_matrix_books]
-    return user_ratings
-
-
-def test_gd_ngd_actuals(user_row, num_iterations=100, alpha=0.01):
-    """
-    Get user matrix (u) for GD and NGD and the actuals
-    """
-    user_id = user_matrix[user_row][0]
-    x = np.array(user_ratings_by_id(user_id, df_user_ratings, d_gb_best_id, items_matrix_books))
-    gd = GradientDescent(num_iterations=num_iterations, alpha=alpha)
-    gd.fit(x, V)
-    ngd = NGD(num_iterations=num_iterations, alpha=alpha)
-    ngd.fit(x.reshape(1, -1), V)
-    # Return actuals, gd, ngd
-    return np.array(user_matrix[user_row][1]), gd.u[0], ngd.u[0]
+    df_uratings['book_id'] = df_uratings['book_id'].map(lambda x: d_gb_best_id.get(x, 0))
+    return df_uratings
 
 
 def plot_gd_ngd_actuals(user_row):
@@ -73,26 +56,7 @@ def plot_gd_ngd_actuals(user_row):
     print("NGD RMSE: ", ((actuals_u - ngd_u) ** 2).sum() ** .5)
 
 
-def test_rmse(random_rows, num_iterations=100, alpha=0.01):
-    """
-    For given number of observations get the error of the user matrix (u)
-    for GD and NGD vs the actuals
-    """
-    actuals_u = []
-    gd_u = []
-    ngd_u = []
-    no_obs = len(random_rows)
-    for rand_row in random_rows:
-        actuals_row, gd_row, ngd_row = test_gd_ngd_actuals(rand_row, num_iterations, alpha)
-        actuals_u.append(actuals_row)
-        gd_u.append(gd_row)
-        ngd_u.append(ngd_row)
-    gd_err = ((np.argsort(np.array(actuals_u)) - np.argsort(np.array(gd_u))) ** 2).sum() ** .5
-    ngd_err = ((np.argsort(np.array(actuals_u)) - np.argsort(np.array(ngd_u))) ** 2).sum() ** .5
-    return gd_err/no_obs, ngd_err/no_obs
-
-
-def grid_search(num_obs, num_iters, alphas):
+def grid_search(num_obs, num_iters, alphas, negatives):
     """
     Grid search number of iterations and alphas to find optimal model
     """
@@ -101,27 +65,57 @@ def grid_search(num_obs, num_iters, alphas):
     best_alpha = None
     best_model = None
     random_rows = np.random.choice(len(user_matrix), num_obs, replace=False)
-    for iters in num_iters:
-        for a in alphas:
-            gd_err, ngd_err = test_rmse(random_rows, num_iterations=iters, alpha=a)
-            print('num_iterations={}, alpha={}'.format(iters, a))
-            print("GD Error - ", gd_err)
-            print("NGD Error - ", ngd_err)
-            print("--"*20)
-            if gd_err < min_err:
-                min_err = gd_err
-                best_iters = iters
-                best_alpha = a
-                best_model = 'GD'
-            if ngd_err < min_err:
-                min_err = ngd_err
-                best_iters = iters
-                best_alpha = a
-                best_model = 'NGD'
+    for negative in negatives:
+        for iters in num_iters:
+            for a in alphas:
+                gd_ord_err, gd_err = test_rmse(random_rows, num_iterations=iters,
+                                   alpha=a, negative=negative)
+                print('num_iterations={}, alpha={}, negative={}'.format(iters,
+                                                                        a,
+                                                                        negative))
+                print("GD Error - ", gd_err)
+                print("GD Ord Error - ", gd_ord_err)
+                print("--"*20)
+                if gd_ord_err < min_err:
+                    min_err = gd_ord_err
+                    best_iters = iters
+                    best_alpha = a
+                    best_model = 'NGD'
+                    if negative:
+                        best_model = 'GD'
     print("Best Model: {}\nAlpha: {}\n# Iters: {}\nError: {}".format(best_model,
                                                                      best_alpha,
                                                                      best_iters,
                                                                      min_err))
+
+
+def test_rmse(random_rows, num_iterations=100, alpha=0.01, negative=True):
+    """
+    For given number of observations get the error of the user matrix (u)
+    for GD and NGD vs the actuals
+    """
+    gd_ord_errs = []
+    gd_errs = []
+    no_obs = len(random_rows)
+    for rand_row in random_rows:
+        actuals_row = np.array(user_matrix[rand_row][1])
+        gd_row = test_gd(rand_row, num_iterations, alpha, negative)
+        actual_sort = np.argsort(actuals_row)
+        gd_sort = np.argsort(gd_row)
+        gd_ord_errs.append((((np.array(actual_sort)) - np.array(gd_sort)) ** 2).sum() ** .5)
+        gd_errs.append((((np.array(actuals_row)) - np.array(gd_row)) ** 2).sum() ** .5)
+    return np.array(gd_ord_errs).sum()/no_obs, np.array(gd_ord_errs).sum()/no_obs
+
+
+def test_gd(user_row, num_iterations=100, alpha=0.01, negative=True):
+    """
+    Get user matrix (u) for GD and NGD and the actuals
+    """
+    user_id = user_matrix[user_row][0]
+    df_user = user_ratings_by_id(user_id, df_user_ratings, d_gb_best_id)
+    gd = GD(num_iterations=num_iterations, alpha=alpha, negative=negative)
+    gd.fit(df_user, items_matrix)
+    return gd.user_factors[0]
 
 
 if __name__ == '__main__':
@@ -130,8 +124,12 @@ if __name__ == '__main__':
 
     V = np.array([factors for factors in items_matrix_factors]).T
 
-    num_iters = [100, 500, 1000]
-    alphas = [.01, .1]
-    num_obs = 250
+    negatives = [True, False]
+    num_iters = [100]
+    alphas = [.01]
+    num_obs = 2
+    # num_iters = [100, 500, 1000]
+    # alphas = [.01, .1]
+    # num_obs = 250
 
-    grid_search(num_obs, num_iters, alphas)
+    grid_search(num_obs, num_iters, alphas, negatives)
