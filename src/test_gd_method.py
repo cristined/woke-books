@@ -87,8 +87,8 @@ def test_rmse(random_rows, num_iterations=100, alpha=0.01):
         actuals_u.append(actuals_row)
         gd_u.append(gd_row)
         ngd_u.append(ngd_row)
-    gd_err = ((np.array(actuals_u) - np.array(gd_u)) ** 2).sum() ** .5
-    ngd_err = ((np.array(actuals_u) - np.array(ngd_u)) ** 2).sum() ** .5
+    gd_err = ((np.argsort(np.array(actuals_u)) - np.argsort(np.array(gd_u))) ** 2).sum() ** .5
+    ngd_err = ((np.argsort(np.array(actuals_u)) - np.argsort(np.array(ngd_u))) ** 2).sum() ** .5
     return gd_err/no_obs, ngd_err/no_obs
 
 
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     V = np.array([factors for factors in items_matrix_factors]).T
 
     num_iters = [100, 500, 1000]
-    alphas = [.01, .1, .5]
-    num_obs = 500
+    alphas = [.01, .1]
+    num_obs = 250
 
     grid_search(num_obs, num_iters, alphas)

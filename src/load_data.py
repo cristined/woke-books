@@ -31,7 +31,9 @@ def get_classified_authors(csv_file):
     df_authors = pd.read_csv(csv_file, usecols=['author_id', 'name', 'race', 'gender', 'image_url',
        'about', 'influences', 'works_count', 'hometown', 'born_at', 'died_at'])
     df_authors['race'] = df_authors['race'].map(lambda x: upper_strip(x))
+    df_authors = df_authors[df_authors['race'].isnull() == False]
     df_authors['gender'] = df_authors['gender'].map(lambda x: upper_strip(x))
+    df_authors = df_authors[df_authors['race'].isnull() == False]
     # List of races and genders from EEO values
     races = ['BLACK', 'WHITE', 'ASIAN', 'LATINO', 'NATIVE AMERICAN', 'MIXED',
              'PACIFIC ISLANDER']

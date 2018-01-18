@@ -41,7 +41,7 @@ class NGD(object):
         '''
         Do number of iterations of ALS iteration.
         '''
-        self.x = x
+        self.x = x.reshape((1, -1))
         self.V = V
         self.u = np.random.rand(self.x.shape[0], self.V.shape[0])
         i = 0

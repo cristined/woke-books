@@ -11,7 +11,8 @@ import matplotlib.pyplot as plt
 import load_data
 from xml_to_csv import get_text
 
-def get_user_read_books(user_id, api_key, page=1, ratings=[]):
+
+def get_user_read_books(user_id, api_key, df_isbn_best_book_id, page=1, ratings=None):
     '''
     INPUT
     - isbn to look up
@@ -19,6 +20,8 @@ def get_user_read_books(user_id, api_key, page=1, ratings=[]):
     OUTPUT
     - goodreads book ID and goodreads best book ID
     '''
+    if ratings is None:
+        ratings = []
     user_reviews = 'https://www.goodreads.com/review/list/{}.xml?key={}&v=2&shelf=read&per_page=200&page={}'.format(user_id, api_key, page)
     response = requests.get(user_reviews)
     no_books = 0
@@ -30,27 +33,24 @@ def get_user_read_books(user_id, api_key, page=1, ratings=[]):
         no_books += 1
         ratings.append([book_id, isbn, rating])
     if no_books == 200:
-        get_user_read_books(user_id, api_key, page + 1, ratings)
-    return pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
+        get_user_read_books(user_id, api_key, df_isbn_best_book_id, page + 1, ratings)
+    df_u_ratings = pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
+    return user_book_id_to_best(df_u_ratings, df_isbn_best_book_id)
 
 
-def user_ratings_for_recommender(df_u_ratings, df_isbn_best_book_id,
-                                 items_matrix_books):
+def user_book_id_to_best(df_u_ratings, df_isbn_best_book_id):
     """
     INPUT:
     - DataFrame with the user ratings
     - Dictionary of ISBN to best book ID
-    - Array of book ID's we care about
     OUTPUT:
-    - Matrix with 0's for unread books
+    -
     """
     dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
     df_u_ratings['book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
     df_u_ratings = df_u_ratings[df_u_ratings['book_id'].isnull() == False]
-    df_u_ratings['book_id'] = df_u_ratings['book_id'].map(lambda x: int(x))
-    dict_u_rate = df_u_ratings.set_index('book_id')['rating'].to_dict()
-    user_ratings = [dict_u_rate.get(book, 0) for book in items_matrix_books]
-    return user_ratings
+    df_u_ratings = df_u_ratings[df_u_ratings['rating'] > 0]
+    return df_u_ratings
 
 
 def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
@@ -69,14 +69,14 @@ def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
                       count each one uniquely
     'percentage'
     """
-    dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
-    df_u_ratings['best_book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
-    df_u_ratings = df_u_ratings[df_u_ratings['best_book_id'].isnull() == False]
+    # dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
+    # df_u_ratings['best_book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
+    # df_u_ratings = df_u_ratings[df_u_ratings['best_book_id'].isnull() == False]
     df_u_books_classified = pd.merge(df_u_ratings, df_books_classified,
-                                     left_on='best_book_id',
+                                     left_on='book_id',
                                      right_on='best_book_id', how='inner')
     df_u_books_classified['authorbook_id'] = df_u_books_classified['best_book_id'].map(str) + ' ' + df_u_books_classified['author_id'].map(str)
-    df_u_ab_classified = df_u_books_classified.groupby(['race','gender'])['authorbook_id'].nunique().reset_index()
+    df_u_ab_classified = df_u_books_classified.groupby(['race', 'gender'])['authorbook_id'].nunique().reset_index()
     df_u_ab_classified['percentage'] = df_u_ab_classified['authorbook_id'] / df_u_ab_classified['authorbook_id'].sum()
     return df_u_ab_classified
 
@@ -107,34 +107,44 @@ def plot_user_authorbook_classified(df_u_ab_classified):
 if __name__ == '__main__':
     api_key = os.environ['GOODREADS_API_KEY']
 
-    df_user_ratings = get_user_read_books(2624891, api_key)
-
-    # Created from GoodReads API, should be the top 10K rated books
-    book_file = '../data/updated_books.csv'
-    # Created from GoodReads API, and manual classification
-    author_file = '../data/classified_authors.csv'
-    # Created from GoodReads API
-    author_book_file = '../data/author_books.csv'
+    import load_data
     # Created from Amazon Review file for ASIN and GoodReads API
     asin_best_file = '../data/asin_best_book_id.csv'
-
-    df_books = load_data.get_books(book_file)
-    df_authors = load_data.get_classified_authors(author_file)
-    df_authors_books = load_data.get_books_to_authors(author_book_file)
     df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
-    df_books_classified = load_data.merge_to_classify_books(df_authors_books,
-                                                            df_authors,
-                                                            df_books)
 
-    df_user_authorsbooks_classified = create_user_authorbook_classified(
-                                                df_isbn_best_book_id,
-                                                df_user_ratings,
-                                                df_books_classified)
-    # plot_user_authorbook_classified(df_user_authorsbooks_classified)
+    df_cristine = get_user_read_books(2624891, api_key, df_isbn_best_book_id)
+    print(len(df_cristine))
 
-    items_matrix = np.load('../data/item_matrix.npy')
-    items_matrix_books = items_matrix[::, 0]
-    matrix_u_rate = user_ratings_for_recommender(df_user_ratings,
-                                                 df_isbn_best_book_id,
-                                                 items_matrix_books)
-    print(matrix_u_rate)
+    # df_cristine = get_user_read_books(2624891, api_key, df_isbn_best_book_id)
+    # print(len(df_cristine))
+    # df_user_ratings = get_user_read_books(2624891, api_key)
+    #
+    # # Created from GoodReads API, should be the top 10K rated books
+    # book_file = '../data/updated_books.csv'
+    # # Created from GoodReads API, and manual classification
+    # author_file = '../data/classified_authors.csv'
+    # # Created from GoodReads API
+    # author_book_file = '../data/author_books.csv'
+    # # Created from Amazon Review file for ASIN and GoodReads API
+    # asin_best_file = '../data/asin_best_book_id.csv'
+    #
+    # df_books = load_data.get_books(book_file)
+    # df_authors = load_data.get_classified_authors(author_file)
+    # df_authors_books = load_data.get_books_to_authors(author_book_file)
+    # df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
+    # df_books_classified = load_data.merge_to_classify_books(df_authors_books,
+    #                                                         df_authors,
+    #                                                         df_books)
+    #
+    # df_user_authorsbooks_classified = create_user_authorbook_classified(
+    #                                             df_isbn_best_book_id,
+    #                                             df_user_ratings,
+    #                                             df_books_classified)
+    # # plot_user_authorbook_classified(df_user_authorsbooks_classified)
+    #
+    # items_matrix = np.load('../data/item_matrix.npy')
+    # items_matrix_books = items_matrix[::, 0]
+    # matrix_u_rate = user_ratings_for_recommender(df_user_ratings,
+    #                                              df_isbn_best_book_id,
+    #                                              items_matrix_books)
+    # print(matrix_u_rate)

@@ -34,6 +34,7 @@ def grid_search_rec(train, test, regParam_list, rank_list):
             rmse, rmse_top_5 = recommender_rmse(recommender, train, test)
             print("regParam: {}, rank: {}\nRMSE: {}\nTop 5 RMSE: {}".format(regParam, rank, rmse, rmse_top_5))
             print("--"*20)
+            save_matrix(recommender, str(rank))
             if rmse_top_5 < min_err_top_5:
                 min_err = rmse
                 min_err_top_5 = rmse_top_5
@@ -41,12 +42,12 @@ def grid_search_rec(train, test, regParam_list, rank_list):
                 best_rank = rank
                 best_recommender = recommender
     print("Best regParam: {}\nBest rank: {}\nBest RMSE: {}\nTop 5 Best RMSE: {}".format(best_regParam, best_rank, min_err, min_err_top_5))
-    return best_recommender
+    return best_regParam, best_rank
 
 
-def save_matrix(recommender):
-    np.save('item_matrix', recommender.itemFactors.toPandas().as_matrix())
-    np.save('user_matrix', recommender.userFactors.toPandas().as_matrix())
+def save_matrix(recommender, prefix):
+    np.save(prefix + '_item_matrix', recommender.itemFactors.toPandas().as_matrix())
+    np.save(prefix + '_user_matrix', recommender.userFactors.toPandas().as_matrix())
 
 
 def recommender_rmse(recommender, train, test):
@@ -68,16 +69,16 @@ def recommender_rmse(recommender, train, test):
 
 def load_books_data():
     # Created from GoodReads API
-    book_file = 'updated_books.csv'
+    book_file = '../data/updated_books.csv'
     # Created from GoodReads API, and manual classification
-    author_file = 'classified_authors.csv'
+    author_file = '../data/classified_authors.csv'
     # Created from GoodReads API
-    author_book_file = 'author_books.csv'
+    author_book_file = '../data/author_books.csv'
     # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = 'asin_best_book_id.csv'
+    asin_best_file = '../data/asin_best_book_id.csv'
     # From Kaggle's Goodbooks-10K
-    k_rating_file = 'ratings.csv'
-    k_book_file = 'books.csv'
+    k_rating_file = '../data/goodbooks-10k/ratings.csv'
+    k_book_file = '../data/goodbooks-10k/books.csv'
 
     df_books = load_data.get_books(book_file)
     df_authors = load_data.get_classified_authors(author_file)
@@ -98,28 +99,29 @@ if __name__ == "__main__":
     # GoodReads data and the datasets look different
     # GoodReads Data:
     # Books/User: 111.87
-    # 5 star 0.33%
-    # 4 star 0.36%
-    # 3 star 0.23%
-    # 2 star 0.06%
-    # 1 star 0.02%
+    # 5 star 33%
+    # 4 star 36%
+    # 3 star 23%
+    # 2 star 6%
+    # 1 star 2%
     # Amazon Data:
     # Books/User: 3.98
-    # 5 star 0.56%
-    # 4 star 0.24%
-    # 3 star 0.11%
-    # 2 star 0.05%
-    # 1 star 0.04%
+    # 5 star 56%
+    # 4 star 24%
+    # 3 star 11%
+    # 2 star 5%
+    # 1 star 4%
     df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings = load_books_data()
 
     ratings_df = spark.createDataFrame(df_k_ratings)
 
     train, validate, test = ratings_df.randomSplit([0.6, 0.2, 0.2], seed=72)
 
-    regParam_list = [.01, 1]
-    rank_list = [5, 10, 15, 20]
-    best_recommender = grid_search_rec(train, validate, regParam_list, rank_list)
+    regParam_list = [.01]
+    rank_list = [10, 20, 50]
+    best_regParam, best_rank = grid_search_rec(train, validate, regParam_list, rank_list)
 
+    # train on entire data set
+    # best_recommender = train_recommender(ratings_df, regParam=best_regParam,
+    #                                      rank=best_rank)
     # save_matrix(best_recommender)
-
-    # print("RMSE = {}".format(recommender_rmse(recommender, test)))
