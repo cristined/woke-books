@@ -6,15 +6,15 @@ import load_data
 from gd_new_user import GD
 
 
-def get_recommender_data():
-    """
-    Get the data from the recommender we are testing on
-    """
-    user_matrix = np.load('../data/user_matrix.npy')
-    items_matrix = np.load('../data/item_matrix.npy')
-    items_matrix_books = items_matrix[::, 0]
-    items_matrix_factors = items_matrix[::, 1]
-    return user_matrix, items_matrix, items_matrix_books, items_matrix_factors
+# def get_recommender_data():
+#     """
+#     Get the data from the recommender we are testing on
+#     """
+#     user_matrix = np.load('../data/user_matrix.npy')
+#     items_matrix = np.load('../data/item_matrix.npy')
+#     items_matrix_books = items_matrix[::, 0]
+#     items_matrix_factors = items_matrix[::, 1]
+#     return user_matrix, items_matrix, items_matrix_books, items_matrix_factors
 
 
 def get_books_data():
@@ -56,7 +56,7 @@ def plot_gd_ngd_actuals(user_row):
     print("NGD RMSE: ", ((actuals_u - ngd_u) ** 2).sum() ** .5)
 
 
-def grid_search(num_obs, num_iters, alphas, negatives):
+def grid_search(num_obs, num_iters, alphas, negatives, items_matrix):
     """
     Grid search number of iterations and alphas to find optimal model
     """
@@ -68,7 +68,7 @@ def grid_search(num_obs, num_iters, alphas, negatives):
     for negative in negatives:
         for iters in num_iters:
             for a in alphas:
-                gd_ord_err, gd_err = test_rmse(random_rows, num_iterations=iters,
+                gd_ord_err, gd_err = test_rmse(random_rows, items_matrix, num_iterations=iters,
                                    alpha=a, negative=negative)
                 print('num_iterations={}, alpha={}, negative={}'.format(iters,
                                                                         a,
@@ -89,7 +89,7 @@ def grid_search(num_obs, num_iters, alphas, negatives):
                                                                      min_err))
 
 
-def test_rmse(random_rows, num_iterations=100, alpha=0.01, negative=True):
+def test_rmse(random_rows, items_matrix, num_iterations=100, alpha=0.01, negative=True):
     """
     For given number of observations get the error of the user matrix (u)
     for GD and NGD vs the actuals
@@ -99,15 +99,15 @@ def test_rmse(random_rows, num_iterations=100, alpha=0.01, negative=True):
     no_obs = len(random_rows)
     for rand_row in random_rows:
         actuals_row = np.array(user_matrix[rand_row][1])
-        gd_row = test_gd(rand_row, num_iterations, alpha, negative)
+        gd_row = test_gd(rand_row, items_matrix, num_iterations, alpha, negative)
         actual_sort = np.argsort(actuals_row)
         gd_sort = np.argsort(gd_row)
         gd_ord_errs.append((((np.array(actual_sort)) - np.array(gd_sort)) ** 2).sum() ** .5)
         gd_errs.append((((np.array(actuals_row)) - np.array(gd_row)) ** 2).sum() ** .5)
-    return np.array(gd_ord_errs).sum()/no_obs, np.array(gd_ord_errs).sum()/no_obs
+    return np.array(gd_ord_errs).sum()/no_obs, np.array(gd_errs).sum()/no_obs
 
 
-def test_gd(user_row, num_iterations=100, alpha=0.01, negative=True):
+def test_gd(user_row, items_matrix, num_iterations=100, alpha=0.01, negative=True):
     """
     Get user matrix (u) for GD and NGD and the actuals
     """
@@ -119,17 +119,28 @@ def test_gd(user_row, num_iterations=100, alpha=0.01, negative=True):
 
 
 if __name__ == '__main__':
-    user_matrix, items_matrix, items_matrix_books, items_matrix_factors = get_recommender_data()
+    # user_matrix, items_matrix, items_matrix_books, items_matrix_factors = get_recommender_data()
     df_user_ratings, df_books_gr, d_gb_best_id = get_books_data()
 
-    V = np.array([factors for factors in items_matrix_factors]).T
-
     negatives = [True, False]
-    num_iters = [100]
-    alphas = [.01]
-    num_obs = 2
-    # num_iters = [100, 500, 1000]
-    # alphas = [.01, .1]
-    # num_obs = 250
+    num_iters = [100, 500, 1000]
+    alphas = [.01, .1]
+    num_obs = 100
 
-    grid_search(num_obs, num_iters, alphas, negatives)
+    print(10)
+    user_matrix = np.load('../data/10_user_matrix.npy')
+    items_matrix = np.load('../data/10_item_matrix.npy')
+
+    grid_search(num_obs, num_iters, alphas, negatives, items_matrix)
+
+    print(20)
+    user_matrix = np.load('../data/20_user_matrix.npy')
+    items_matrix = np.load('../data/20_item_matrix.npy')
+
+    grid_search(num_obs, num_iters, alphas, negatives, items_matrix)
+
+    print(50)
+    user_matrix = np.load('../data/20_user_matrix.npy')
+    items_matrix = np.load('../data/20_item_matrix.npy')
+
+    grid_search(num_obs, num_iters, alphas, negatives, items_matrix)

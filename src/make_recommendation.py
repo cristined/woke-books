@@ -3,8 +3,7 @@ import numpy as np
 import os
 import load_data
 import get_user
-from new_user_gradient_descent import GradientDescent
-from new_user_non_neg_grad_desc import NGD
+from gd_new_user import GD
 
 
 def get_books_data():
@@ -61,16 +60,9 @@ def get_user_data(user_id, api_key, df_isbn_best_book_id, df_books_classified, d
     return df_user_ratings, df_user_v_goodreads, np.array(matrix_u_rate)
 
 
-def get_ngd_user(items_matrix_factors, matrix_u_rate):
-    book_factors = np.array([factors for factors in items_matrix_factors]).T
-    ngd = NGD(num_iterations=100, alpha=0.01)
-    ngd.fit(matrix_u_rate, book_factors)
-    return ngd.u
-
-
-def get_gd_user(df_user_ratings, items_matrix):
+def get_gd_user(df_user_ratings, items_matrix, negative=False):
     # book_factors = np.array([factors for factors in items_matrix_factors]).T
-    gd = GradientDescent(num_iterations=100, alpha=0.01)
+    gd = GD(num_iterations=100, alpha=0.01, negative=negative)
     gd.fit(df_user_ratings, items_matrix)
     return gd.user_factors
 
