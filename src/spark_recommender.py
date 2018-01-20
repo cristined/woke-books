@@ -45,9 +45,34 @@ def grid_search_rec(train, test, regParam_list, rank_list):
     return best_regParam, best_rank
 
 
+def grid_search_rec_per_rank(train_df, train_val_df, regParam_list, rank_list):
+    metrics = []
+    train, test = train_df.randomSplit([0.7, 0.3], seed=72)
+    for rank in rank_list:
+        min_err = float('inf')
+        min_err_top_5 = float('inf')
+        best_regParam = None
+        for regParam in regParam_list:
+            recommender = train_recommender(train, regParam=regParam, rank=rank)
+            rmse, rmse_top_5 = recommender_rmse(recommender, train, test)
+            metrics.append([rank, regParam, rmse, rmse_top_5])
+            print("regParam: {}, rank: {}\nRMSE: {}\nTop 5 RMSE: {}".format(rank, regParam, rmse, rmse_top_5))
+            print("--"*20)
+            if rmse_top_5 < min_err_top_5:
+                min_err = rmse
+                min_err_top_5 = rmse_top_5
+                best_regParam = regParam
+        recommender = train_recommender(train_df, regParam=best_regParam, rank=rank)
+        save_matrix(recommender, str(rank) + "_train")
+        recommender_val = train_recommender(train_val_df, regParam=best_regParam, rank=rank)
+        save_matrix(recommender_val, str(rank) + "_test")
+    print(metrics)
+    return metrics
+
 def save_matrix(recommender, prefix):
     np.save(prefix + '_item_matrix', recommender.itemFactors.toPandas().as_matrix())
     np.save(prefix + '_user_matrix', recommender.userFactors.toPandas().as_matrix())
+    print("Saved: {} matrix".format(prefix))
 
 
 def recommender_rmse(recommender, train, test):
@@ -90,6 +115,8 @@ def load_books_data():
     return df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings
 
 
+
+
 if __name__ == "__main__":
     spark = pyspark.sql.SparkSession.builder.getOrCreate()
     sc = spark.sparkContext
@@ -111,17 +138,14 @@ if __name__ == "__main__":
     # 3 star 11%
     # 2 star 5%
     # 1 star 4%
-    df_books, df_authors, df_authors_books, df_isbn_best_book_id, df_books_classified, df_k_ratings = load_books_data()
 
-    ratings_df = spark.createDataFrame(df_k_ratings)
+    df_train = pd.read_csv('../data/goodbooks-10k/train-ratings.csv')
+    df_train_val = pd.read_csv('../data/goodbooks-10k/train_val-ratings.csv')
 
-    train, validate, test = ratings_df.randomSplit([0.6, 0.2, 0.2], seed=72)
+    train_df = spark.createDataFrame(df_train)
 
-    regParam_list = [.01]
-    rank_list = [10, 20, 50]
-    best_regParam, best_rank = grid_search_rec(train, validate, regParam_list, rank_list)
+    train_val_df = spark.createDataFrame(df_train_val)
 
-    # train on entire data set
-    # best_recommender = train_recommender(ratings_df, regParam=best_regParam,
-    #                                      rank=best_rank)
-    # save_matrix(best_recommender)
+    regParam_list = [.01, .05, .1]
+    rank_list = range(11, 42)[::2]
+    metrics = grid_search_rec_per_rank(train_df, regParam_list, train_val_df, rank_list)

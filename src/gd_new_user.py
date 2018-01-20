@@ -73,7 +73,7 @@ class GD(object):
         """Run the gradient descent algorithm for one repititions.
         Parameters
         ----------
-        x: ndarray, dense as fuck rating matrix
+        x: ndarray, rating matrix
             The training data for the optimization.
         V: ndarray, items data
             The training response for the optimization.
@@ -100,11 +100,12 @@ class GD(object):
         for book, rating in self.user_ratings.items():
             try:
                 i = np.where(self.item_books == book)[0][0]
-                estimate = np.dot(self.u, self.V.T[i])
+                estimate = np.dot(self.user_factors, self.item_factors.T[i])
                 est.append(rating - estimate)
+                # print(book, rating, estimate)
             except IndexError:
                 pass
-        return (np.array(est) ** 2).sum()
+        return (np.array(est) ** 2 / len(est)).sum()
 
 
 if __name__ == '__main__':
@@ -124,8 +125,9 @@ if __name__ == '__main__':
     gd = GD(alpha=.01, num_iterations=100, negative=True)
     gd.fit(df_user, items_matrix)
     print(gd.user_factors)
-
+    print(gd.reconstruction_error())
 
     gd_neg = GD(alpha=.01, num_iterations=100, negative=False)
     gd_neg.fit(df_user, items_matrix)
     print(gd_neg.user_factors)
+    print(gd_neg.reconstruction_error())
