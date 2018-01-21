@@ -7,12 +7,12 @@ import os
 import requests
 from xml.etree import ElementTree
 import time
-# import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 import load_data
 from xml_to_csv import get_text
 
 
-def get_user_read_books(user_id, api_key, df_isbn_best_book_id, page=1, ratings=None):
+def get_user_read_books(user_id, api_key, df_isbn_best_book_id, df_books, page=1, ratings=None):
     '''
     INPUT
     - isbn to look up
@@ -33,12 +33,12 @@ def get_user_read_books(user_id, api_key, df_isbn_best_book_id, page=1, ratings=
         no_books += 1
         ratings.append([book_id, isbn, rating])
     if no_books == 200:
-        get_user_read_books(user_id, api_key, df_isbn_best_book_id, page + 1, ratings)
+        get_user_read_books(user_id, api_key, df_isbn_best_book_id, df_books, page + 1, ratings)
     df_u_ratings = pd.DataFrame(ratings, columns=['book_id', 'isbn', 'rating'])
-    return user_book_id_to_best(df_u_ratings, df_isbn_best_book_id)
+    return user_book_id_to_best(df_u_ratings, df_isbn_best_book_id, df_books)
 
 
-def user_book_id_to_best(df_u_ratings, df_isbn_best_book_id):
+def user_book_id_to_best(df_u_ratings, df_isbn_best_book_id, df_books):
     """
     INPUT:
     - DataFrame with the user ratings
@@ -46,11 +46,18 @@ def user_book_id_to_best(df_u_ratings, df_isbn_best_book_id):
     OUTPUT:
     -
     """
+    books_read = len(df_u_ratings)
     dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
-    df_u_ratings['book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
+    df_u_ratings['valid_id'] = df_u_ratings['book_id'].map(int).isin(set(df_books['best_book_id']))
+    df_u_ratings['isbn_book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
+    df_u_ratings.loc[df_u_ratings['valid_id'] == False,'best_book_id'] = df_u_ratings['isbn_book_id']
+    df_u_ratings.loc[df_u_ratings['valid_id'],'best_book_id'] = df_u_ratings['book_id']
+    df_u_ratings['book_id'] = df_u_ratings['best_book_id']
     df_u_ratings = df_u_ratings[df_u_ratings['book_id'].isnull() == False]
     df_u_ratings = df_u_ratings[df_u_ratings['rating'] > 0]
-    return df_u_ratings
+    df_u_ratings = df_u_ratings[['book_id', 'isbn', 'rating']]
+    books_read_10k = len(df_u_ratings)
+    return df_u_ratings, books_read_10k, books_read
 
 
 def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
@@ -69,6 +76,8 @@ def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
                       count each one uniquely
     'percentage'
     """
+    df_u_ratings['book_id'] = df_u_ratings['book_id'].map(int)
+    df_books_classified['best_book_id'] = df_books_classified['best_book_id'].map(int)
     df_u_books_classified = pd.merge(df_u_ratings, df_books_classified,
                                      left_on='book_id',
                                      right_on='best_book_id', how='inner')

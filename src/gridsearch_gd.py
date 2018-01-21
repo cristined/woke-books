@@ -1,22 +1,15 @@
 import numpy as np
 import pandas as pd
 import random
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import load_data
 from gd_new_user import GD
 import time
-import copy_reg
 import types
 import multiprocessing
 import warnings
 warnings.filterwarnings("ignore")
 
-
-def _pickle_method(m):
-    if m.im_self is None:
-        return getattr, (m.im_class, m.im_func.func_name)
-    else:
-        return getattr, (m.im_self, m.im_func.func_name)
 
 class GridSearchGD(object):
     def __init__(self):
@@ -33,12 +26,6 @@ class GridSearchGD(object):
         self.rank = rank
         self._get_books_data()
         self._load_matrix()
-
-    def _pickle_method(self, m):
-        if m.im_self is None:
-            return getattr, (m.im_class, m.im_func.func_name)
-        else:
-            return getattr, (m.im_self, m.im_func.func_name)
 
     def _get_books_data(self):
         """
@@ -79,11 +66,7 @@ class GridSearchGD(object):
         for negative in negatives:
             for iters in num_iters:
                 for a in alphas:
-                    # ratings_rank_sim = self.test_ratings_rank_sim(user_ids, num_iterations=iters,
-                    #                    alpha=a, negative=negative)
-
                     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-                    copy_reg.pickle(types.MethodType, _pickle_method)
                     test_gd_var = [(user_id, iters, a, negative) for user_id in user_ids]
                     ratings_rank_sim_list = pool.map(self.test_gd, test_gd_var)
                     pool.close()
@@ -108,35 +91,6 @@ class GridSearchGD(object):
                                                                          max_ratings_rank_sim))
         np.save(str(self.rank) + '_metrics', np.array(metrics))
         return best_model, best_alpha, best_iters, max_ratings_rank_sim
-
-
-    def test_ratings_rank_sim(self, user_ids, num_iterations=100, alpha=0.01, negative=True):
-        """
-        For given number of observations get the error of the user matrix (u)
-        for GD and NGD vs the actuals
-        """
-        # gd_ord_errs = []
-        # gd_errs = []
-        # gd_recon_errs = []
-        # no_obs = len(user_ids)
-        #lambda function with matrix and param coded in to test_gd function
-        # test_gd_pool = lambda x: self.test_gd(x, num_iterations, alpha, negative)
-        # call pool with lambda function - will return a list
-        pool = multiprocessing.Pool(multiprocessing.cpu_count())
-        copy_reg.pickle(types.MethodType, _pickle_method)
-        test_gd_var = [(user_id, True, 100, .01) for user_id in user_ids]
-        ratings_rank_sim_list = pool.map(self.test_gd, test_gd_var)
-        pool.close()
-        pool.join()
-        # for user_id in d_list:
-        #     user_row = np.where(users_test_matrix[::,0] == user_id)[0][0]
-        #     actuals_row = np.array(users_test_matrix[user_row][1])
-        #     actual_sort = np.argsort(actuals_row)
-        #     gd_sort = np.argsort(gd_row)
-        #     gd_ord_errs.append(((((np.array(actual_sort)) - np.array(gd_sort)) ** 2).sum() / len(actual_sort))** .5)
-        #     gd_errs.append(((((np.array(actuals_row)) - np.array(gd_row)) ** 2).sum() / len(actuals_row)) ** .5)
-        #     gd_recon_errs.append(gd_recon_err)
-        return np.array(ratings_rank_sim_list).mean()
 
     def test_gd(self, test_gd_var):
         """
@@ -173,27 +127,38 @@ class GridSearchGD(object):
 
 
 if __name__ == '__main__':
-    # df_user_ratings, df_books_gr, d_gb_best_id = get_books_data()
 
-    negatives = [True, False]
+    max_ratings_rank_sim = 0
+    best_iters = None
+    best_alpha = None
+    best_model = None
+    best_rank = None
+
+    negatives = [True]
     num_iters = [100, 500, 1000]
     alphas = [.01, .1]
 
-    # user_ids = np.random.choice(df_user_ratings['user_id'].unique(), 2, replace=False)
+    rank_list = range(11, 42)[::2]
+    for rank in rank_list:
+        print("=="*20)
+        print(rank)
+        start = time.time()
+        grid_gd = GridSearchGD()
+        grid_gd.fit(rank)
+        np.random.seed(0)
+        user_ids = np.random.choice(grid_gd.df_user_ratings['user_id'].unique(), 1000, replace=False)
+        rank_best_model, rank_best_alpha, rank_best_iters, rank_max_ratings_rank_sim = grid_gd.grid_search(user_ids, num_iters, alphas, negatives, rank)
+        if max_ratings_rank_sim < rank_max_ratings_rank_sim:
+            max_ratings_rank_sim = rank_max_ratings_rank_sim
+            best_iters = rank_best_iters
+            best_alpha = rank_best_alpha
+            best_model = rank_best_model
+            best_rank = rank
+        end = time.time()
+        print(end - start, 'seconds')
 
-
-    print(11)
-    # we need to compare ranking between the actual user recommendations dot with the item factors
-        # and the ones we made up with the test item set
-    # rank_list = range(11, 42)[::2]
-    rank = 11
-    print("=="*20)
-    print(rank)
-    start = time.time()
-    grid_gd = GridSearchGD()
-    grid_gd.fit(rank)
-    np.random.seed(0)
-    user_ids = np.random.choice(grid_gd.df_user_ratings['user_id'].unique(), 2, replace=False)
-    grid_gd.grid_search(user_ids, num_iters, alphas, negatives, rank)
-    end = time.time()
-    print(end - start)
+    print("Best Rank: {}\nModel: {}\nAlpha: {}\n# Iters: {}\nMax Sim: {}".format(best_rank,
+                                                                     best_model,
+                                                                     best_alpha,
+                                                                     best_iters,
+                                                                     max_ratings_rank_sim))
