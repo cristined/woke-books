@@ -28,7 +28,7 @@ def get_classified_authors(csv_file):
     'author_id', 'name', 'race', 'gender', 'image_url',
     'about', 'influences', 'works_count', 'hometown', 'born_at', 'died_at'
     """
-    df_authors = pd.read_csv(csv_file, usecols=['author_id', 'name', 'race', 'gender', 'image_url',
+    df_authors = pd.read_csv(csv_file, usecols=['author_id', 'name', 'main_author', 'race', 'gender', 'image_url',
        'about', 'influences', 'works_count', 'hometown', 'born_at', 'died_at'])
     df_authors['race'] = df_authors['race'].map(lambda x: upper_strip(x))
     df_authors = df_authors[df_authors['race'].isnull() == False]
@@ -43,7 +43,7 @@ def get_classified_authors(csv_file):
     gender_majority = Counter(df_authors['gender']).most_common()[0][0]
     df_authors['race'] = df_authors['race'].map(lambda x: replace_invalid_values(x, races, race_majority))
     df_authors['gender'] = df_authors['gender'].map(lambda x: replace_invalid_values(x, genders, gender_majority))
-    df_authors = df_authors[df_authors['race'].isnull() == False]
+    df_authors = df_authors[df_authors['main_author']]
     return df_authors
 
 
@@ -186,19 +186,19 @@ def get_goodread_data(ratings_csv, books_csv):
 
 if __name__ == '__main__':
     # Created from GoodReads API
-    book_file = 'data/updated_books.csv'
+    book_file = '../data/updated_books.csv'
     # Created from GoodReads API, and manual classification
-    author_file = 'data/classified_authors.csv'
+    author_file = '../data/classified_authors.csv'
     # Created from GoodReads API
-    author_book_file = 'data/author_books.csv'
+    author_book_file = '../data/author_books.csv'
     # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = 'data/asin_best_book_id.csv'
+    asin_best_file = '../data/asin_best_book_id.csv'
     # From Kaggle's Goodbooks-10K
-    k_rating_file = 'data/goodbooks-10k/ratings.csv'
-    k_book_file = 'data/goodbooks-10k/books.csv'
+    k_rating_file = '../data/goodbooks-10k/ratings.csv'
+    k_book_file = '../data/goodbooks-10k/books.csv'
     # Created from Amazon Review file
-    a_ratings_file = 'data/limited_amazon_ratings.csv'
-    a_reviews_file = 'data/limited_amazon_reviews.csv'
+    a_ratings_file = '../data/limited_amazon_ratings.csv'
+    a_reviews_file = '../data/limited_amazon_reviews.csv'
 
     df_books = get_books(book_file)
     df_authors = get_classified_authors(author_file)
