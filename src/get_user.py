@@ -48,7 +48,7 @@ def user_book_id_to_best(df_u_ratings, df_isbn_best_book_id, df_books):
     """
     books_read = len(df_u_ratings)
     dict_isbn_best_id = df_isbn_best_book_id.set_index(['isbn'])['best_book_id'].to_dict()
-    df_u_ratings['valid_id'] = df_u_ratings['book_id'].map(int).isin(set(df_books['best_book_id']))
+    df_u_ratings['valid_id'] = df_u_ratings['book_id'].isin(set(df_books['best_book_id']))
     df_u_ratings['isbn_book_id'] = df_u_ratings['isbn'].map(lambda x: dict_isbn_best_id.get(x))
     df_u_ratings.loc[df_u_ratings['valid_id'] == False,'best_book_id'] = df_u_ratings['isbn_book_id']
     df_u_ratings.loc[df_u_ratings['valid_id'],'best_book_id'] = df_u_ratings['book_id']
@@ -77,7 +77,7 @@ def create_user_authorbook_classified(df_isbn_best_book_id, df_u_ratings,
     'percentage'
     """
     df_u_ratings['book_id'] = df_u_ratings['book_id'].map(int)
-    df_books_classified['best_book_id'] = df_books_classified['best_book_id'].map(int)
+    # df_books_classified['best_book_id'] = df_books_classified['best_book_id'].map(int)
     df_u_books_classified = pd.merge(df_u_ratings, df_books_classified,
                                      left_on='book_id',
                                      right_on='best_book_id', how='inner')
@@ -111,32 +111,18 @@ def plot_user_authorbook_classified(df_u_ab_classified):
 
 
 if __name__ == '__main__':
+
+    df_books = load_data.get_books()
+    df_authors = load_data.get_classified_authors()
+    df_authors_books = load_data.get_books_to_authors()
+    df_isbn_best_book_id = load_data.get_isbn_to_best_book_id()
+    df_books_classified = load_data.merge_to_classify_books()
+
     api_key = os.environ['GOODREADS_API_KEY']
 
-    import load_data
-    # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = '../data/asin_best_book_id.csv'
-    df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
-
-    df_user_ratings = get_user_read_books(2624891, api_key, df_isbn_best_book_id)
+    df_user_ratings, books_read_10k, books_read = get_user_read_books(2624891, api_key, df_isbn_best_book_id, df_books)
     print(len(df_user_ratings))
-
-    # Created from GoodReads API, should be the top 10K rated books
-    book_file = '../data/updated_books.csv'
-    # Created from GoodReads API, and manual classification
-    author_file = '../data/classified_authors.csv'
-    # Created from GoodReads API
-    author_book_file = '../data/author_books.csv'
-    # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = '../data/asin_best_book_id.csv'
-
-    df_books = load_data.get_books(book_file)
-    df_authors = load_data.get_classified_authors(author_file)
-    df_authors_books = load_data.get_books_to_authors(author_book_file)
-    df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
-    df_books_classified = load_data.merge_to_classify_books(df_authors_books,
-                                                            df_authors,
-                                                            df_books)
+    df_user_ratings.head()
 
     df_user_authorsbooks_classified = create_user_authorbook_classified(
                                                 df_isbn_best_book_id,

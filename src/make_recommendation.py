@@ -4,7 +4,6 @@ import os
 import load_data
 import get_user
 from gd_new_user import GD
-# from tabulate import tabulate
 
 class UserRecs(object):
     def __init__(self):
@@ -19,24 +18,11 @@ class UserRecs(object):
         self.get_recommendations()
 
     def _get_books_data(self):
-        # Created from GoodReads API, should be the top 10K rated books
-        book_file = '../data/updated_books.csv'
-        # From Goodbooks data
-        gr_book_file = '../data/goodbooks-10k/books.csv'
-        # Created from GoodReads API, and manual classification
-        author_file = '../data/classified_authors.csv'
-        # Created from GoodReads API
-        author_book_file = '../data/author_books.csv'
-        # Created from Amazon Review file for ASIN and GoodReads API
-        asin_best_file = '../data/asin_best_book_id.csv'
-        self.df_books = load_data.get_books(book_file)
-        self.df_gr_books = pd.read_csv(gr_book_file)
-        self.df_authors = load_data.get_classified_authors(author_file)
-        self.df_authors_books = load_data.get_books_to_authors(author_book_file)
-        self.df_isbn_best_book_id = load_data.get_isbn_to_best_book_id(asin_best_file)
-        df_books_classified = load_data.merge_to_classify_books(self.df_authors_books,
-                                                                self.df_authors,
-                                                                self.df_books)
+        self.df_books = load_data.get_books()
+        self.df_authors = load_data.get_classified_authors()
+        self.df_authors_books = load_data.get_books_to_authors()
+        self.df_isbn_best_book_id = load_data.get_isbn_to_best_book_id()
+        df_books_classified = load_data.merge_to_classify_books()
         df_books_classified['authorbook_id'] = df_books_classified['best_book_id'].map(str) + ' ' + df_books_classified['author_id'].map(str)
         self.df_books_classified = df_books_classified
         df_ab_classified = df_books_classified.groupby(['race','gender'])['authorbook_id'].nunique().reset_index()
@@ -99,7 +85,7 @@ class UserRecs(object):
         rec_ind = self.df_recommendations[['best_book_id']].reset_index(drop=True
                                                                         ).reset_index()
         rec_ind = rec_ind.groupby(['best_book_id']).min().reset_index()
-        rec_ind = pd.merge(rec_ind, self.df_gr_books, how='left',
+        rec_ind = pd.merge(rec_ind, self.df_books, how='left',
                            left_on='best_book_id', right_on='best_book_id'
                            ).sort_values('index')
         self.book_recs = rec_ind
@@ -121,9 +107,16 @@ if __name__ == '__main__':
     Moses = 8683925
     Rohit = 76691842
 
-    for rank in [11, 13]:
-        Cristine_Recs = UserRecs()
-        Cristine_Recs.fit(Cristine, api_key, rank)
-        print("Rank of {} for {}".format(rank, 'Catherine'))
-        print(pretty_print(Cristine_Recs.df_recommendations, 10))
-        Cristine_Recs.plot_user_data()
+    rank = 13
+    Cristine_Recs = UserRecs()
+    Cristine_Recs.fit(Cristine, api_key, rank, negative=True)
+    print("Rank of {} for {}".format(rank, 'Cristine'))
+    print(pretty_print(Cristine_Recs.df_recommendations, 10))
+    Cristine_Recs.plot_user_data()
+
+
+    rank = 29
+    Cristine_Recs = UserRecs()
+    Cristine_Recs.fit(Cristine, api_key, rank, negative=False)
+    print("Rank of {} for {}".format(rank, 'Cristine'))
+    print(pretty_print(Cristine_Recs.df_recommendations, 10))
