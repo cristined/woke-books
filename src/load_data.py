@@ -141,7 +141,7 @@ def get_amazon_review_text(csv_file):
     OUTPUT:
     Series of aggregated reviews grouped by GoodReads best book id
     """
-    df_reviews = pd.read_csv('new_less_reviews.csv', header=None,
+    df_reviews = pd.read_csv(csv_file, header=None,
                              names=['best_book_id', 'asin', 'summary',
                                     'review_text'])
     df_reviews = df_reviews[df_reviews['review_text'].isnull() == False]
@@ -159,7 +159,7 @@ def get_amazon_ratings(csv_file):
     'user_id', 'book_id', 'rating'
     """
     df_a_ratings = pd.read_csv(csv_file, header=None,
-                               names=['book_id', 'asin', 'user_ID',
+                               names=['book_id', 'asin', 'user_id',
                                       'helpful', 'rating', 'unix_review_time'])
     df_a_ratings = df_a_ratings[['user_id', 'book_id', 'rating']]
     return df_a_ratings
@@ -194,8 +194,8 @@ if __name__ == '__main__':
     # Created from Amazon Review file for ASIN and GoodReads API
     asin_best_file = '../data/asin_best_book_id.csv'
     # From Kaggle's Goodbooks-10K
-    k_rating_file = '../data/goodbooks-10k/ratings.csv'
-    k_book_file = '../data/goodbooks-10k/books.csv'
+    gr_rating_file = '../data/goodbooks-10k/ratings.csv'
+    gr_book_file = '../data/goodbooks-10k/books.csv'
     # Created from Amazon Review file
     a_ratings_file = '../data/limited_amazon_ratings.csv'
     a_reviews_file = '../data/limited_amazon_reviews.csv'
@@ -209,6 +209,6 @@ if __name__ == '__main__':
     df_books_classified = merge_to_classify_books(df_authors_books, df_authors,
                                                   df_books)
 
-    df_k_ratings = get_goodread_data(k_rating_file, k_book_file)
+    df_gr_ratings = get_goodread_data(gr_rating_file, gr_book_file)
     df_a_ratings = get_amazon_ratings(a_ratings_file)
     df_reviews_agg = get_amazon_review_text(a_reviews_file)
