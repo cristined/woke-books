@@ -11,10 +11,17 @@ def get_books():
     'description', 'work_id', 'best_book_id', 'original_title',
     'ratings_count', 'work_ratings_count', 'work_text_reviews_count',
     'ratings_1', 'ratings_2', 'ratings_3', 'ratings_4', 'ratings_5',
-    'image_url', 'small_image_url'
+    'image_url', 'small_image_url', 'k_label'
     """
-    df_books = load_table('books')
-    return df_books
+    query = """
+            SELECT books.*, k_label
+            FROM books
+            LEFT JOIN
+            kmeans
+            ON books.best_book_id = kmeans.book_id;
+            """
+    engine = create_engine('postgresql://postgres@localhost/books')
+    return pd.read_sql_query(query, engine)
 
 
 def get_classified_authors():
@@ -59,28 +66,27 @@ def merge_to_classify_books():
     'ratings_1', 'ratings_2', 'ratings_3', 'ratings_4', 'ratings_5',
     'image_url', 'small_image_url', 'author_id', 'name', 'main_author',
     'race', 'gender', 'about', 'influences', 'works_count', 'hometown',
-    'born_at', 'died_at'
+    'born_at', 'died_at', 'k_label'
     """
     query = """
             WITH authors_books_classified AS
-                 (SELECT book_id, authors.author_id as author_id,
-                         authors.name as name, main_author, race, gender,
-                         about, influences, authors.works_count as works_count,
-                         hometown, born_at, died_at
+                 (SELECT book_id, authors.author_id as author_id, authors.name as name,
+                         main_author, race, gender, about, influences,
+                         authors.works_count as works_count, hometown, born_at, died_at
                  FROM book_authors
                  INNER JOIN authors
-                 ON book_authors.author_id = authors.author_id)
-            SELECT books.book_id as book_id, title, isbn, isbn13, country_code,
-                   language_code, description, work_id, best_book_id,
-                   original_title, ratings_count, work_ratings_count,
-                   work_text_reviews_count, ratings_1, ratings_2, ratings_3,
-                   ratings_4, ratings_5, image_url, small_image_url, author_id,
-                   name, main_author, race, gender, about, influences,
-                   works_count, hometown, born_at, died_at
+                 ON book_authors.author_id = authors.author_id),
+            k_classified AS
+                 (SELECT authors_books_classified.*, k_label
+                 FROM authors_books_classified
+                 LEFT JOIN kmeans
+                 ON authors_books_classified.book_id = kmeans.book_id)
+            SELECT books.*, author_id, name, main_author, race, gender, about,
+                   influences, works_count, hometown, born_at, died_at, k_label
             FROM books
             INNER JOIN
-            authors_books_classified
-            ON books.best_book_id = authors_books_classified.book_id;
+            k_classified
+            ON books.best_book_id = k_classified.book_id;
             """
     engine = create_engine('postgresql://postgres@localhost/books')
     return pd.read_sql_query(query, engine)
@@ -98,7 +104,7 @@ def get_amazon_review_text(csv_file):
                              names=['best_book_id', 'asin', 'summary',
                                     'review_text'])
     df_reviews = df_reviews[df_reviews['review_text'].isnull() == False]
-    df_reviews_agg = df_reviews.groupby('best_book_id')['reviewText'].agg(lambda col: ' '.join(col))
+    df_reviews_agg = df_reviews.groupby('best_book_id')['review_text'].agg(lambda col: ' '.join(col))
     return df_reviews_agg
 
 
@@ -146,15 +152,10 @@ def load_table(table_name):
 if __name__ == '__main__':
 
     df_books = get_books()
-    print("Books: ", df_books.columns)
     df_authors = get_classified_authors()
-    print("Authors: ", df_authors.columns)
     df_authors_books = get_books_to_authors()
-    print("Author Books: ", df_authors_books.columns)
     df_isbn_best_book_id = get_isbn_to_best_book_id()
-    print("ISBN to Book ID: ", df_isbn_best_book_id.columns)
     df_books_classified = merge_to_classify_books()
-    print("Books Classified: ", df_books_classified.columns)
 
 
     # From Kaggle's Goodbooks-10K

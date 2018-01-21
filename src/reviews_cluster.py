@@ -55,7 +55,8 @@ class ReviewClusters(object):
         stops = set(nltk.corpus.stopwords.words('english'))
         stemmer = WordNetLemmatizer()
         doc = word_tokenize(doc.lower())
-        tokens = [''.join([char for char in tok if char not in string.punctuation]) for tok in doc]
+        tokens = [''.join([char for char in tok if char not in
+                  string.punctuation]) for tok in doc]
         tokens = [tok for tok in tokens if tok]
         if stops:
             tokens = [tok for tok in tokens if (tok not in stops)]
@@ -63,14 +64,34 @@ class ReviewClusters(object):
             tokens = [stemmer.lemmatize(tok) for tok in tokens]
         return tokens
 
+    def print_top_books(self, n):
+        k_books = pd.DataFrame(list(zip(list(self.kmeans.labels_),
+                               list(self.reviews.index))),
+                               columns=['k_label', 'book_id'])
+        self.k_counter = Counter(k_books['k_label'])
+        df_books = load_data.get_books()
+        self.df_k_books = pd.merge(df_books, k_books, how='inner',
+                              right_on='book_id', left_on='best_book_id')
+        for i in range(self.cluster_num):
+            print(i)
+            print(list(self.df_k_books[self.df_k_books['k_label'] == i]['title'])[:n])
+            print("=="*20)
+
 
 if __name__ == '__main__':
     # Created from Amazon Review file
     a_reviews_file = '../data/limited_amazon_reviews.csv'
 
-    df_reviews_agg = get_amazon_review_text(a_reviews_file)
+    df_reviews_agg = load_data.get_amazon_review_text(a_reviews_file)
 
     rc = ReviewClusters()
-    rc.fit(df_reviews_agg, 13, 100)
-    rc.save_k_books('../data/kmeans_book_id.csv')
+    rc.fit(df_reviews_agg, 13, 1000)
+    rc.save_k_books('../data/13_kmeans_book_id.csv')
     rc.print_centroid_vocab(15)
+    rc.print_top_books(15)
+
+    rc = ReviewClusters()
+    rc.fit(df_reviews_agg, 10, 1000)
+    rc.save_k_books('../data/10_kmeans_book_id.csv')
+    rc.print_centroid_vocab(15)
+    rc.print_top_books(15)

@@ -3,7 +3,9 @@ import numpy as np
 import os
 import load_data
 import get_user
+from collections import Counter
 from gd_new_user import GD
+
 
 class UserRecs(object):
     def __init__(self):
@@ -38,6 +40,11 @@ class UserRecs(object):
 
     def get_user_data(self, user_id, api_key):
         self.df_user_ratings, self.books_read_10k, self.books_read = get_user.get_user_read_books(user_id, api_key, self.df_isbn_best_book_id, self.df_books)
+        user_k = pd.merge(self.df_user_ratings,
+                          self.df_books_classified[['best_book_id', 'k_label']],
+                          how='left', left_on='book_id', right_on='best_book_id')
+        count_ks = Counter(user_k['k_label'])
+        self.most_common_ks = [k_label for k_label, count in count_ks.most_common(5)]
         df_user_ab_classified = get_user.create_user_authorbook_classified(self.df_isbn_best_book_id,
                                                                            self.df_user_ratings,
                                                                            self.df_books_classified)
@@ -90,10 +97,19 @@ class UserRecs(object):
                            ).sort_values('index')
         self.book_recs = rec_ind
 
+    def print_categorical_refs(self, n):
+        print('==='*20)
+        for k in self.most_common_ks:
+            print(k)
+            print(list(self.book_recs[self.book_recs['k_label'] == k]['title'])[:n])
+            print('==='*20)
+        print('Top not in these categories')
+        print(list(self.book_recs[self.book_recs['k_label'].isin(self.most_common_ks) == False]['title'])[:n])
+        print('==='*20)
+
 
 def pretty_print(df, length):
-    # df = df[['title','name_x','race_gender','rating_guess','boosted_ratings']].head(length)
-    df = df[['title', 'race_gender']].head(length)
+    df = df[['title', 'race_gender', 'k_label']].head(length)
     print(str(df))
 
 
@@ -112,11 +128,5 @@ if __name__ == '__main__':
     Cristine_Recs.fit(Cristine, api_key, rank, negative=True)
     print("Rank of {} for {}".format(rank, 'Cristine'))
     print(pretty_print(Cristine_Recs.df_recommendations, 10))
-    Cristine_Recs.plot_user_data()
-
-
-    rank = 29
-    Cristine_Recs = UserRecs()
-    Cristine_Recs.fit(Cristine, api_key, rank, negative=False)
-    print("Rank of {} for {}".format(rank, 'Cristine'))
-    print(pretty_print(Cristine_Recs.df_recommendations, 10))
+    Cristine_Recs.print_categorical_refs(10)
+    # Cristine_Recs.plot_user_data()

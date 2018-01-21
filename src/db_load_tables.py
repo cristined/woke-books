@@ -104,6 +104,18 @@ def get_isbn_to_best_book_id(csv_file, our_best_book_ids=None):
     return df_isbn_best_book_id
 
 
+def get_kmeans_books(csv_file):
+    """
+    INPUT:
+    csv filename
+    set of the best book ID's we care about if we would like to limit the file
+    OUTPUT:
+    DataFrame with the following columns:
+    'k_label', 'book_id'
+    """
+    return pd.read_csv(csv_file).set_index('k_label')
+
+
 def pd_to_sql(df, name):
     engine = create_engine('postgresql+psycopg2://postgres@localhost/books')
     df.to_sql(name, engine)
@@ -124,6 +136,10 @@ if __name__ == '__main__':
     author_book_file = '../data/author_books.csv'
     pd_to_sql(get_books_to_authors(author_book_file), 'book_authors')
 
-    # # Created from Amazon Review file for ASIN and GoodReads API
+    # Created from Amazon Review file for ASIN and GoodReads API
     asin_best_file = '../data/asin_best_book_id.csv'
     pd_to_sql(get_isbn_to_best_book_id(asin_best_file), 'isbn_book_id')
+
+    # Created from the reviews_cluster.py
+    kmeans_book_id = '../data/kmeans_book_id.csv'
+    pd_to_sql(get_kmeans_books(kmeans_book_id), 'kmeans')
