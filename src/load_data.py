@@ -144,7 +144,7 @@ def get_amazon_review_text(csv_file):
     df_reviews = pd.read_csv('new_less_reviews.csv', header=None,
                              names=['best_book_id', 'asin', 'summary',
                                     'review_text'])
-    df_reviews = df_reviews[df_reviews['reviewText'].isnull() == False]
+    df_reviews = df_reviews[df_reviews['review_text'].isnull() == False]
     df_reviews_agg = df_reviews.groupby('best_book_id')['reviewText'].agg(lambda col: ' '.join(col))
     return df_reviews_agg
 

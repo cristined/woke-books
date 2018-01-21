@@ -134,7 +134,7 @@ if __name__ == '__main__':
     best_model = None
     best_rank = None
 
-    negatives = [True]
+    negatives = [False]
     num_iters = [100, 500, 1000]
     alphas = [.01, .1]
 
