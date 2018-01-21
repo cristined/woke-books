@@ -1,136 +1,89 @@
 import pandas as pd
 from collections import Counter
+from sqlalchemy import create_engine
 
 
-def get_books(csv_file):
+def get_books():
     """
-    INPUT:
-    csv filename
-    OUTPUT:
-    DataFrame with the following columns:
-    'book_id', 'title','isbn', 'isbn13', 'country_code',
-    'language_code', 'description', 'work_id', 'best_book_id', 'original_title'
+    INPUT: None
+    OUTPUT: DataFrame with the following columns:
+    'book_id', 'title', 'isbn', 'isbn13', 'country_code', 'language_code',
+    'description', 'work_id', 'best_book_id', 'original_title',
+    'ratings_count', 'work_ratings_count', 'work_text_reviews_count',
+    'ratings_1', 'ratings_2', 'ratings_3', 'ratings_4', 'ratings_5',
+    'image_url', 'small_image_url'
     """
-    df_books = pd.read_csv(csv_file, usecols=['book_id', 'title',
-                           'isbn', 'isbn13', 'country_code',
-                           'language_code', 'description', 'work_id',
-                           'best_book_id', 'original_title'])
-    df_books = df_books[df_books['language_code'].map(lambda x: x in ['eng', 'en-US', 'en-GB', 'en-CA', 'en'])]
+    df_books = load_table('books')
     return df_books
 
 
-def get_classified_authors(csv_file):
+def get_classified_authors():
     """
-    INPUT:
-    csv filename
-    OUTPUT:
-    DataFrame with the following columns:
-    'author_id', 'name', 'race', 'gender', 'image_url',
+    INPUT: None
+    OUTPUT: DataFrame with the following columns:
+    'author_id', 'name', 'main_author', 'race', 'gender', 'image_url',
     'about', 'influences', 'works_count', 'hometown', 'born_at', 'died_at'
     """
-    df_authors = pd.read_csv(csv_file, usecols=['author_id', 'name', 'main_author', 'race', 'gender', 'image_url',
-       'about', 'influences', 'works_count', 'hometown', 'born_at', 'died_at'])
-    df_authors['race'] = df_authors['race'].map(lambda x: upper_strip(x))
-    df_authors = df_authors[df_authors['race'].isnull() == False]
-    df_authors['gender'] = df_authors['gender'].map(lambda x: upper_strip(x))
-    df_authors = df_authors[df_authors['race'].isnull() == False]
-    # List of races and genders from EEO values
-    races = ['BLACK', 'WHITE', 'ASIAN', 'LATINO', 'NATIVE AMERICAN', 'MIXED',
-             'PACIFIC ISLANDER']
-    genders = ['FEMALE', 'MALE']
-    # Invalid values will be replaced with majority of class
-    race_majority = Counter(df_authors['race']).most_common()[0][0]
-    gender_majority = Counter(df_authors['gender']).most_common()[0][0]
-    df_authors['race'] = df_authors['race'].map(lambda x: replace_invalid_values(x, races, race_majority))
-    df_authors['gender'] = df_authors['gender'].map(lambda x: replace_invalid_values(x, genders, gender_majority))
-    df_authors = df_authors[df_authors['main_author']]
+    df_authors = load_table('authors')
     return df_authors
 
 
-def upper_strip(value):
-    try:
-        return value.upper().strip()
-    except AttributeError:
-        return value
-
-
-def replace_invalid_values(value, valid_values, replacement):
+def get_books_to_authors():
     """
-    INPUT:
-    csv filename
-    INPUT:
-    -value
-    -list of valid values
-    OUTPUT:
-    valid value
-    """
-    if value in valid_values:
-        return value
-    return replacement
-
-
-def get_books_to_authors(csv_file):
-    """
-    INPUT:
-    csv filename
-    OUTPUT:
-    DataFrame with the following columns:
+    INPUT: None
+    OUTPUT: DataFrame with the following columns:
     'book_id', 'author_id', 'name', 'role'
     """
-    df_authors_books = pd.read_csv(csv_file, usecols=['book_id',
-                                   'author_id', 'name', 'role'])
+    df_authors_books = load_table('book_authors')
     return df_authors_books
 
 
-def get_isbn_to_best_book_id(csv_file, our_best_book_ids=None):
+def get_isbn_to_best_book_id():
     """
-    INPUT:
-    csv filename
-    set of the best book ID's we care about if we would like to limit the file
-    OUTPUT:
-    DataFrame with the following columns:
+    INPUT: None
+    OUTPUT: DataFrame with the following columns:
     'isbn', 'best_book_id'
     """
-    pass
-    df_isbn_best_book_id = pd.read_csv(csv_file, header=None,
-                                       names=['isbn', 'best_book_id'])
-    df_isbn_best_book_id = df_isbn_best_book_id[df_isbn_best_book_id['best_book_id'].isnull() == False]
-    if our_best_book_ids:
-        df_isbn_best_book_id = df_isbn_best_book_id[df_isbn_best_book_id['best_book_id'].map(lambda x: x in our_best_book_ids)]
-    df_isbn_best_book_id['best_book_id'] = df_isbn_best_book_id['best_book_id'].map(lambda x: int(x))
+    df_isbn_best_book_id = load_table('isbn_book_id')
     return df_isbn_best_book_id
 
 
-def merge_to_classify_books(df_authors_books, df_authors, df_books):
+def merge_to_classify_books():
     """
-    INPUT:
-    df_authors_books created by function get_books_to_authors
-    df_authors created by function get_classified_authors
-    df_books created by function get_books
+    INPUT: None
     OUTPUT:
     DataFrame with the following columns:
     'book_id', 'title', 'isbn', 'isbn13', 'country_code', 'language_code',
-    'description', 'work_id', 'best_book_id', 'original_title', 'author_id',
-    'name_x', 'role', 'race', 'gender', 'image_url', 'about',
-    'influences', 'works_count', 'hometown', 'born_at', 'died_at'
+    'description', 'work_id', 'best_book_id', 'original_title',
+    'ratings_count', 'work_ratings_count', 'work_text_reviews_count',
+    'ratings_1', 'ratings_2', 'ratings_3', 'ratings_4', 'ratings_5',
+    'image_url', 'small_image_url', 'author_id', 'name', 'main_author',
+    'race', 'gender', 'about', 'influences', 'works_count', 'hometown',
+    'born_at', 'died_at'
     """
-    df_authors_books_classified = pd.merge(df_authors_books, df_authors,
-                                           right_on='author_id',
-                                           left_on='author_id', how='inner')
-    df_books_classified = pd.merge(df_books, df_authors_books_classified,
-                                   right_on='book_id', left_on='book_id',
-                                   how='left')
-    df_books_classified = df_books_classified[['book_id', 'title', 'isbn',
-                                               'isbn13', 'country_code',
-                                               'language_code', 'description',
-                                               'work_id', 'best_book_id',
-                                               'original_title', 'author_id',
-                                               'name_x', 'role', 'race',
-                                               'gender', 'image_url',
-                                               'about', 'influences',
-                                               'works_count', 'hometown',
-                                               'born_at', 'died_at']]
-    return df_books_classified
+    query = """
+            WITH authors_books_classified AS
+                 (SELECT book_id, authors.author_id as author_id,
+                         authors.name as name, main_author, race, gender,
+                         about, influences, authors.works_count as works_count,
+                         hometown, born_at, died_at
+                 FROM book_authors
+                 INNER JOIN authors
+                 ON book_authors.author_id = authors.author_id)
+            SELECT books.book_id as book_id, title, isbn, isbn13, country_code,
+                   language_code, description, work_id, best_book_id,
+                   original_title, ratings_count, work_ratings_count,
+                   work_text_reviews_count, ratings_1, ratings_2, ratings_3,
+                   ratings_4, ratings_5, image_url, small_image_url, author_id,
+                   name, main_author, race, gender, about, influences,
+                   works_count, hometown, born_at, died_at
+            FROM books
+            INNER JOIN
+            authors_books_classified
+            ON books.best_book_id = authors_books_classified.book_id;
+            """
+    engine = create_engine('postgresql://postgres@localhost/books')
+    return pd.read_sql_query(query, engine)
 
 
 def get_amazon_review_text(csv_file):
@@ -184,31 +137,32 @@ def get_goodread_data(ratings_csv, books_csv):
     return df_ratings
 
 
+def load_table(table_name):
+    engine = create_engine('postgresql://postgres@localhost/books')
+    df = pd.read_sql_table(table_name, engine)
+    return df
+
+
 if __name__ == '__main__':
-    # Created from GoodReads API
-    book_file = '../data/updated_books.csv'
-    # Created from GoodReads API, and manual classification
-    author_file = '../data/classified_authors.csv'
-    # Created from GoodReads API
-    author_book_file = '../data/author_books.csv'
-    # Created from Amazon Review file for ASIN and GoodReads API
-    asin_best_file = '../data/asin_best_book_id.csv'
+
+    df_books = get_books()
+    print("Books: ", df_books.columns)
+    df_authors = get_classified_authors()
+    print("Authors: ", df_authors.columns)
+    df_authors_books = get_books_to_authors()
+    print("Author Books: ", df_authors_books.columns)
+    df_isbn_best_book_id = get_isbn_to_best_book_id()
+    print("ISBN to Book ID: ", df_isbn_best_book_id.columns)
+    df_books_classified = merge_to_classify_books()
+    print("Books Classified: ", df_books_classified.columns)
+
+
     # From Kaggle's Goodbooks-10K
     gr_rating_file = '../data/goodbooks-10k/ratings.csv'
     gr_book_file = '../data/goodbooks-10k/books.csv'
     # Created from Amazon Review file
     a_ratings_file = '../data/limited_amazon_ratings.csv'
     a_reviews_file = '../data/limited_amazon_reviews.csv'
-
-    df_books = get_books(book_file)
-    df_authors = get_classified_authors(author_file)
-    df_authors_books = get_books_to_authors(author_book_file)
-    our_best_book_ids = set(df_books['best_book_id'])
-    df_isbn_best_book_id = get_isbn_to_best_book_id(asin_best_file, our_best_book_ids)
-
-    df_books_classified = merge_to_classify_books(df_authors_books, df_authors,
-                                                  df_books)
-
-    df_gr_ratings = get_goodread_data(gr_rating_file, gr_book_file)
-    df_a_ratings = get_amazon_ratings(a_ratings_file)
-    df_reviews_agg = get_amazon_review_text(a_reviews_file)
+    # df_gr_ratings = get_goodread_data(gr_rating_file, gr_book_file)
+    # df_a_ratings = get_amazon_ratings(a_ratings_file)
+    # df_reviews_agg = get_amazon_review_text(a_reviews_file)
