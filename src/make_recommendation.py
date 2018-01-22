@@ -5,13 +5,14 @@ import load_data
 import get_user
 from collections import Counter
 from gd_new_user import GD
+import operator
 
 
 class UserRecs(object):
     def __init__(self):
         self._get_books_data()
 
-    def fit(self, user_id, api_key, rank, negative=True):
+    def fit(self, user_id, api_key, rank, negative=False):
         self.rank = rank
         self.user_id = user_id
         self._get_items_matrix()
@@ -43,8 +44,12 @@ class UserRecs(object):
         user_k = pd.merge(self.df_user_ratings,
                           self.df_books_classified[['best_book_id', 'k_label']],
                           how='left', left_on='book_id', right_on='best_book_id')
-        count_ks = Counter(user_k['k_label'])
-        self.most_common_ks = [k_label for k_label, count in count_ks.most_common(5)]
+        self.count_ks = Counter(user_k['k_label'])
+        most_common_ks = dict()
+        for k, count in Counter(self.df_books['k_label']).most_common(13):
+            most_common_ks[k] = self.count_ks[k]/float(count)
+        most_common_ks = sorted(most_common_ks.items(), key=operator.itemgetter(1))[::-1]
+        self.most_common_ks = [k_label for k_label, count in most_common_ks[:5]]
         df_user_ab_classified = get_user.create_user_authorbook_classified(self.df_isbn_best_book_id,
                                                                            self.df_user_ratings,
                                                                            self.df_books_classified)
@@ -123,9 +128,9 @@ if __name__ == '__main__':
     Moses = 8683925
     Rohit = 76691842
 
-    rank = 13
+    rank = 41
     Cristine_Recs = UserRecs()
-    Cristine_Recs.fit(Cristine, api_key, rank, negative=True)
+    Cristine_Recs.fit(Cristine, api_key, rank)
     print("Rank of {} for {}".format(rank, 'Cristine'))
     print(pretty_print(Cristine_Recs.df_recommendations, 10))
     Cristine_Recs.print_categorical_refs(10)

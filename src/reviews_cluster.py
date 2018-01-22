@@ -34,7 +34,7 @@ class ReviewClusters(object):
 
     def _cluster(self):
         self.kmeans = KMeans(n_clusters=self.cluster_num).fit(self.vectors)
-        kmeans.labels_
+        self.kmeans.labels_
 
         self.k_books = pd.DataFrame(list(zip(list(self.kmeans.labels_),
                                     list(self.reviews.index))),
@@ -70,8 +70,8 @@ class ReviewClusters(object):
                                columns=['k_label', 'book_id'])
         self.k_counter = Counter(k_books['k_label'])
         df_books = load_data.get_books()
-        self.df_k_books = pd.merge(df_books, k_books, how='inner',
-                              right_on='book_id', left_on='best_book_id')
+        self.df_k_books = pd.merge(df_books[['best_book_id', 'title']], k_books, how='inner',
+                                   left_on='best_book_id', right_on='book_id')
         for i in range(self.cluster_num):
             print(i)
             print(list(self.df_k_books[self.df_k_books['k_label'] == i]['title'])[:n])
