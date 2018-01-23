@@ -6,7 +6,7 @@ Reading is one of the best tools we have to try to see the world from a perspect
 ## Process
 
 ### Data
-I used three main data sources:
+I used three data sources:
 1. [Amazon product data from Julian McAuley, UCSD](http://jmcauley.ucsd.edu/data/amazon/) - for text reviews
 2. [Goodreads API](https://www.goodreads.com/api/index) - for book and author data
 3. [Goodbooks 10k](https://github.com/zygmuntz/goodbooks-10k) - for ratings and kicking off point of top 10K ranked books on GoodReads
