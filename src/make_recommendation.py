@@ -12,7 +12,7 @@ class UserRecs(object):
     def __init__(self):
         self._get_books_data()
 
-    def fit(self, user_id, api_key, rank, negative=False):
+    def fit(self, user_id, api_key, rank=41, negative=False):
         self.rank = rank
         self.user_id = user_id
         self._get_items_matrix()
@@ -128,10 +128,9 @@ if __name__ == '__main__':
     Moses = 8683925
     Rohit = 76691842
 
-    rank = 41
-    Cristine_Recs = UserRecs()
-    Cristine_Recs.fit(Cristine, api_key, rank)
-    print("Rank of {} for {}".format(rank, 'Cristine'))
+    recs = UserRecs()
+    recs.fit(Cristine, api_key)
+    print("Recommendations for {}".format('Cristine'))
     print(pretty_print(Cristine_Recs.df_recommendations, 10))
-    Cristine_Recs.print_categorical_refs(10)
-    # Cristine_Recs.plot_user_data()
+    recs.print_categorical_refs(10)
+    # recs.plot_user_data()
