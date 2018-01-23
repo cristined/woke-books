@@ -96,7 +96,8 @@ def plot_user_authorbook_classified(df_u_ab_classified):
     """
     ax = df_u_ab_classified['authorbook_id'].plot(kind='bar',
                                     title="Books Read by Race and Gender",
-                                    legend=False, fontsize=12)
+                                    figsize=(15, 10), legend=False,
+                                    fontsize=12)
     plt.xticks(rotation=0)
     x_labels = list(df_u_ab_classified['race'] + '\n' + df_u_ab_classified['gender'])
     ax.set_xticklabels(map(lambda x: x.title(), x_labels))
