@@ -1,7 +1,8 @@
-# Underrepresented Author Book Recommender
+# Woke Books
+#### a.k.a Underrepresented Author Book Recommender
 
 ## Mission
-Reading is one of the best tools we have to try to see the world from a perspective that is different from our own. I wanted to create a book recommender that would show me books that are not just like the books I have read before, but are in the genres I am interested in but by authors with different perspectives than I normally read and help expand my world view.
+Reading is one of the best tools we have to try to see the world from a perspective that is different from our own. I wanted to create a book recommender that would show me books that are not just like the books I have read before, but are in the genres I am interested in but by authors with different perspectives than I normally read and help expand my worldview.
 
 ## Process
 
