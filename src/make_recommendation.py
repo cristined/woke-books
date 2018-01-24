@@ -10,6 +10,9 @@ import operator
 
 class UserRecs(object):
     def __init__(self):
+        """
+        Initiate user recommendation class
+        """
         self._get_books_data()
         self.k_names = {0: 'Graphic Novels',
                         1: 'Required Reading',
@@ -26,14 +29,23 @@ class UserRecs(object):
                         12: 'Horror'}
 
     def fit(self, user_id, api_key, rank=41, negative=False):
+        """
+        Fit the user recommendations based on their goodreads ID
+        Default rank to best rank determined in testing rank=41
+        Default gd fit method to best determined in testing negative=False
+        """
         self.rank = rank
         self.user_id = user_id
+        self.negative = negative
         self._get_items_matrix()
         self.get_user_data(user_id, api_key)
-        self.get_gd_user(negative)
+        self.get_gd_user()
         self.get_recommendations()
 
     def _get_books_data(self):
+        """
+        Load book data from postgres database
+        """
         self.df_books = load_data.get_books()
         self.df_authors = load_data.get_classified_authors()
         self.df_authors_books = load_data.get_books_to_authors()
@@ -47,12 +59,20 @@ class UserRecs(object):
         self.df_ab_classified = df_ab_classified
 
     def _get_items_matrix(self):
+        """
+        Get book matrix with the correct rank created by spark
+        """
         item_test_npy = '../data/k-matrix/{}_test_item_matrix.npy'.format(self.rank)
         self.items_matrix = np.load(item_test_npy)
         self.items_matrix_books = self.items_matrix[::, 0]
         self.items_matrix_factors = self.items_matrix[::, 1]
 
     def get_user_data(self, user_id, api_key):
+        """
+        Get user ratings from goodreads
+        Create user most common categories
+        Create user vs goodreads matrix to be used in boosting later
+        """
         self.df_user_ratings, self.books_read_10k, self.books_read = get_user.get_user_read_books(user_id, api_key, self.df_isbn_best_book_id, self.df_books)
         user_k = pd.merge(self.df_user_ratings,
                           self.df_books_classified[['best_book_id', 'k_label']],
@@ -82,15 +102,28 @@ class UserRecs(object):
         self.df_user_v_goodreads = df_user_v_goodreads
 
     def plot_user_data(self):
+        """
+        Plot users goodreads data and list how many books were used in fitting
+        the recommendations
+        """
         print("{} out of {} books that you have read are in the top 10,000 books on goodreads".format(self.books_read_10k, self.books_read))
         get_user.plot_user_authorbook_classified(self.df_user_ab_classified)
 
-    def get_gd_user(self, negative=False):
-        gd = GD(num_iterations=100, alpha=0.01, negative=negative)
+    def get_gd_user(self):
+        """
+        Get user vector from gradient descent using best number of iterations
+        and learning rate
+        """
+        gd = GD(num_iterations=100, alpha=0.01, negative=self.negative)
         gd.fit(self.df_user_ratings, self.items_matrix)
         self.gd = gd
 
     def get_recommendations(self):
+        """
+        Combine user factors and book factors to create recommendations
+        Filter on unread books
+        Boost ratings based off of the user's reading diversity scores
+        """
         book_factors = np.array([factors for factors in self.items_matrix_factors]).T
         recommendations = np.dot(self.gd.user_factors, book_factors)
         book_recs_arr = np.dstack((self.items_matrix_books.reshape((-1)), recommendations.reshape((-1))))[0]
@@ -99,6 +132,7 @@ class UserRecs(object):
         df_books_unread = df_books_rec_ratings[df_books_rec_ratings.rating.isnull()]
         df_books_unread_classified = pd.merge(df_books_unread, self.df_books_classified, left_on='best_book_id', right_on='best_book_id', how='inner')
         dict_user_goodreads_boost = self.df_user_v_goodreads.set_index('race_gender')['user_gr_perc_norm'].to_dict()
+        df_books_unread_classified = df_books_unread_classified[df_books_unread_classified['k_label'] != 8] # Hiding childrens books from results for now
         df_books_unread_classified['race_gender'] = df_books_unread_classified['race'] + ' ' + df_books_unread_classified['gender']
         df_books_unread_classified['rating_guess'] = 5 * df_books_unread_classified['rating_guess'] / df_books_unread_classified['rating_guess'].max()
         df_books_unread_classified['boost'] = df_books_unread_classified['race_gender'].map(lambda x: dict_user_goodreads_boost.get(x, 0))
@@ -107,15 +141,23 @@ class UserRecs(object):
         self.get_final_rec_df()
 
     def get_final_rec_df(self):
-        rec_ind = self.df_recommendations[['best_book_id']].reset_index(drop=True
-                                                                        ).reset_index()
+        """
+        Removes duplicate books (multiple authors) and returns data frame with
+        book list and includes images if you would like to display them
+        """
+        rec_ind = self.df_recommendations[['best_book_id']].reset_index(drop=True).reset_index()
         rec_ind = rec_ind.groupby(['best_book_id']).min().reset_index()
         rec_ind = pd.merge(rec_ind, self.df_books, how='left',
                            left_on='best_book_id', right_on='best_book_id'
                            ).sort_values('index')
         self.book_recs = rec_ind
+        return self.book_recs
 
-    def print_categorical_refs(self, n):
+    def print_categorical_recs(self, n):
+        """
+        Print recs by top 5 k means clusers for this user and the top books not
+        in their top 5 k's
+        """
         print('==='*20)
         for k in self.most_common_ks:
             print(self.k_names[k])
@@ -145,5 +187,5 @@ if __name__ == '__main__':
     recs.fit(Cristine, api_key)
     print("Recommendations for {}".format('Cristine'))
     print(pretty_print(Cristine_Recs.df_recommendations, 10))
-    recs.print_categorical_refs(10)
+    recs.print_categorical_recs(10)
     # recs.plot_user_data()

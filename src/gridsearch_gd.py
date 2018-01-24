@@ -13,6 +13,9 @@ warnings.filterwarnings("ignore")
 
 class GridSearchGD(object):
     def __init__(self):
+        """
+        Initiate grid search for gradient descent object
+        """
         self.rank = None
         self.df_user_ratings = None
         self.df_books_gr = None
@@ -23,6 +26,9 @@ class GridSearchGD(object):
         self.items_test_matrix = None
 
     def fit(self, rank):
+        """
+        Fit for the rank we are testing and then get the data
+        """
         self.rank = rank
         self._get_books_data()
         self._load_matrix()
@@ -36,6 +42,9 @@ class GridSearchGD(object):
         self.d_gb_best_id = self.df_books_gr.set_index('book_id')['best_book_id'].to_dict()
 
     def _load_matrix(self):
+        """
+        Load train and test matrixes
+        """
         user_train_npy = '../data/k-matrix/{}_train_user_matrix.npy'.format(self.rank)
         item_train_npy = '../data/k-matrix/{}_train_item_matrix.npy'.format(self.rank)
         user_test_npy = '../data/k-matrix/{}_test_user_matrix.npy'.format(self.rank)
@@ -95,6 +104,7 @@ class GridSearchGD(object):
     def test_gd(self, test_gd_var):
         """
         Get user matrix (u) for GD and NGD and the actuals
+        Return the rank difference
         """
         user_id, iters, a, negative = test_gd_var
         df_user = self.user_ratings_by_id(user_id)
@@ -107,6 +117,9 @@ class GridSearchGD(object):
         return rank_diff
 
     def get_results_vect(self, actuals_row, gd_row):
+        """
+        Get the result vectors for the test vs the training data
+        """
         actuals_row = actuals_row.reshape((1, -1))
         gd_row = gd_row.reshape((1, -1))
         items_train_matrix = np.array([i for i in self.items_train_matrix[::,1]]).T
@@ -117,6 +130,9 @@ class GridSearchGD(object):
         return ratings_rank_sim
 
     def ratings_rank_similarity(self, actuals_row, gd_row):
+        """
+        Create a ratings rank similarity score
+        """
         actual_sort = np.argsort(actuals_row).reshape((-1))[::-1]
         gd_sort = np.argsort(gd_row).reshape((-1))[::-1]
         score = []

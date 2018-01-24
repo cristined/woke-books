@@ -144,6 +144,9 @@ def get_goodread_data(ratings_csv, books_csv):
 
 
 def load_table(table_name):
+    """
+    Load tabel and don't have to recreate the engine every time
+    """
     engine = create_engine('postgresql://postgres@localhost/books')
     df = pd.read_sql_table(table_name, engine)
     return df

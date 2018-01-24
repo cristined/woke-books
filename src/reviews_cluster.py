@@ -13,11 +13,21 @@ import load_data
 
 class ReviewClusters(object):
     def __init__(self):
+        """
+        Initiate the reviews cluster object
+        """
         self.reviews = None
         self.cluster_num = None
         self.max_features = None
 
     def fit(self, reviews, cluster_num, max_features):
+        """
+        Fit the reviews cluster
+        INPUT:
+        - PD series with book ID's as index and review text as only column
+        - Number of clusters
+        - Max features for TDIDF
+        """
         self.reviews = reviews
         self.cluster_num = cluster_num
         self.max_features = max_features
@@ -25,6 +35,9 @@ class ReviewClusters(object):
         self._cluster()
 
     def _vectorize(self):
+        """
+        Vectorize the reviews and return vectors and cols for self
+        """
         vect = TfidfVectorizer(stop_words='english', tokenizer=self.tokenizer,
                                max_features=self.max_features)
         vector_matrix = vect.fit_transform(self.reviews)
@@ -33,17 +46,25 @@ class ReviewClusters(object):
         self.cols = vect.get_feature_names()
 
     def _cluster(self):
+        """
+        Cluster vecotirzed reviews and create k books a data frame relating the
+        k label to the book id
+        """
         self.kmeans = KMeans(n_clusters=self.cluster_num).fit(self.vectors)
-        self.kmeans.labels_
-
         self.k_books = pd.DataFrame(list(zip(list(self.kmeans.labels_),
                                     list(self.reviews.index))),
                                     columns=['k_label', 'book_id'])
 
     def save_k_books(self, path):
+        """
+        Save k book label for later use
+        """
         self.k_books.set_index('k_label').to_csv(path)
 
     def print_centroid_vocab(self, n):
+        """
+        Print the top n words from all centroids vocab
+        """
         centroids = self.kmeans.cluster_centers_
         for ind, c in enumerate(centroids):
             print(ind)
@@ -52,6 +73,9 @@ class ReviewClusters(object):
             print("=="*20)
 
     def tokenizer(self, doc):
+        """
+        Tokenize documents with stop words and lemmatization
+        """
         stops = set(nltk.corpus.stopwords.words('english'))
         stemmer = WordNetLemmatizer()
         doc = word_tokenize(doc.lower())
@@ -65,6 +89,9 @@ class ReviewClusters(object):
         return tokens
 
     def print_top_books(self, n):
+        """
+        Print top books for each centroids
+        """
         k_books = pd.DataFrame(list(zip(list(self.kmeans.labels_),
                                list(self.reviews.index))),
                                columns=['k_label', 'book_id'])
