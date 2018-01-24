@@ -23,7 +23,7 @@ When a new user joins goodreads they rate books they have read in the past and I
 ### Gradient Descent into Madness
 The most difficult part of trying to find the user vector by gradient descent was finding the best metric to measure how successful the recreation was in comparison to how the user vector would look if the program refactored the entire matrix in Spark. The metric that ended up making the most sense was comparing the book rating rank similarity of what the gradient descent vector’s dot product with the item matrix was compared to the Spark user matrix dotted with the item matrix.
 
-I needed to gridsearch not only what is the best preforming recommender while testing in Spark but what rank for the item matrix creates the best recreation during gradient descent. I split the ratings data by users into 3 different groups: training, validation, and testing.
+I needed to gridsearch not only what is the best performing recommender while testing in Spark but what rank for the item matrix creates the best recreation during gradient descent. I split the ratings data by users into 3 different groups: training, validation, and testing.
 
 #### Spark Training
 In Spark I split the training user group into a train and test group and ran a grid search for different regularization parameters for different ranks. Once I had optimized for my test ranks, I ran and saved the book and user matrices for both the training users and the training/validation users.
@@ -31,7 +31,7 @@ In Spark I split the training user group into a train and test group and ran a g
 In Spark, a low rank matrix was able to produce very good results but once the matrices were passed to do gradient descent for new users, a lot of the user's taste were lost in translation. At the end of this step there were 4 matrices for each rank we were testing: training only user matrix, training only books matrix, training/validation user matrix, training/validation book matrix.
 
 #### New User Gradient Descent Training
-I took the user ratings from the validation data and used that to do a gradient descent with the training only books matrix to create a user vector. I compared the ranking result of the user vector from gradient descent multiplied with the training only books matrix to the ranking result of that user's vector from training/validation user matrix multiplied with training/validation book matrix. I did a rank similarity comparison because the order was more important then the actual predicted rating.
+I took the user ratings from the validation data and used that to do a gradient descent with the training only books matrix to create a user vector. I compared the ranking result of the user vector from gradient descent multiplied with the training only books matrix to the ranking result of that user's vector from training/validation user matrix multiplied with training/validation book matrix. I did a rank similarity comparison because the order was more important than the actual predicted rating.
 
 I tested the same subset of the validation users across different gradient descent parameters and across the different ranks of matrices output by Spark and found that we needed a rank that was approximately 4 times higher to retain individuality with gradient descent.
 

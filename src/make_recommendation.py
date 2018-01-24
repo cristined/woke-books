@@ -11,6 +11,19 @@ import operator
 class UserRecs(object):
     def __init__(self):
         self._get_books_data()
+        self.k_names = {0: 'Graphic Novels',
+                        1: 'Required Reading',
+                        2: 'Young Adult',
+                        3: 'Mind Openers',
+                        4: 'Murder',
+                        5: 'Suspense',
+                        6: 'Classics',
+                        7: 'Love',
+                        8: 'Childrens',
+                        9: 'Vampires',
+                        10: 'Series',
+                        11: 'Collections',
+                        12: 'Horror'}
 
     def fit(self, user_id, api_key, rank=41, negative=False):
         self.rank = rank
@@ -105,10 +118,10 @@ class UserRecs(object):
     def print_categorical_refs(self, n):
         print('==='*20)
         for k in self.most_common_ks:
-            print(k)
+            print(self.k_names[k])
             print(list(self.book_recs[self.book_recs['k_label'] == k]['title'])[:n])
             print('==='*20)
-        print('Top not in these categories')
+        print("Top Recommendations not in Your Top Categories")
         print(list(self.book_recs[self.book_recs['k_label'].isin(self.most_common_ks) == False]['title'])[:n])
         print('==='*20)
 
