@@ -51,9 +51,6 @@ To further personalize the recommendations of the users, I took the 5 categories
 
 It is hard to measure the success of recommendations. To do so within the context of this project I used the goodreads accounts and brains of Catherine Goold, Moses Marsh, Rohit Unni, and Tomas Bielskis to confirm they were getting reasonable recommendations. Ideally I would like to be able to measure the click through rate on these recommendations so I could find if this would spike their initial interest, whether they marked these books as "to-read", and if they read the book within a certain time period.
 
-### Cold Start Problem
-If a user has never read a book, the program is able to show the top rated books by people of color in each k-means category. The user can explore these options and then rate and get personalized recommendations.
-
 ### Future Work
 I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
 
