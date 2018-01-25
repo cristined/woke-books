@@ -179,12 +179,6 @@ if __name__ == '__main__':
                                                                      best_iters,
                                                                      max_ratings_rank_sim))
 
-    # Model: GD
-    # Best Rank: 41
-    # Alpha: 0.01
-    # # Iters: 100
-    # Max Sim: 0.5638323380788377
-
     # Model: NGD
     # Best Rank: 41
     # Alpha: 0.01
