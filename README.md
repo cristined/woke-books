@@ -51,6 +51,18 @@ To further personalize the recommendations of the users, I took the 5 categories
 
 It is hard to measure the success of recommendations. To do so within the context of this project I used the goodreads accounts and brains of Catherine Goold, Moses Marsh, Rohit Unni, and Tomas Bielskis to confirm they were getting reasonable recommendations. Ideally I would like to be able to measure the click through rate on these recommendations so I could find if this would spike their initial interest, whether they marked these books as "to-read", and if they read the book within a certain time period.
 
+### Example
+
+Okay so now you get the theory, but let's see an example
+
+## Moses (Standard Nerd)
+
+Let me introduce you to our sample user Mr. Moses Marsh our dear instructor who is basic af in his nerdiness.
+
+So here are his recommendations prior to boosting, I really believe that he could find all of these books himself, in fact he has read some of these and had yet to rate them in goodreads.
+
+![Standard Nerd Recs - Before Boosting](https://github.com/cristined/woke-books/img/standard_nerd_recs_before_boosting.png)
+
 ### Future Work
 I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
 
