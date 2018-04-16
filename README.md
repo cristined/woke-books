@@ -1,5 +1,5 @@
 # Woke Books
-#### a.k.a Underrepresented Author Book Recommender
+a.k.a Underrepresented Author Book Recommender
 
 ## Mission
 Reading is one of the best tools we have to try to see the world from a perspective that is different from our own. Recommendation engines are often echo chambers suggesting items solely on their similarity to what you have previously read. I wanted to create a book recommender that would show me books that are not just like the books I have read before, but are in the genres I am interested in but by authors with different perspectives than I normally read and help expand my worldview.
@@ -51,11 +51,16 @@ To further personalize the recommendations of the users, I took the 5 categories
 
 It is hard to measure the success of recommendations. To do so within the context of this project I used the goodreads accounts and brains of Catherine Goold, Moses Marsh, Rohit Unni, and Tomas Bielskis to confirm they were getting reasonable recommendations. Ideally I would like to be able to measure the click through rate on these recommendations so I could find if this would spike their initial interest, whether they marked these books as "to-read", and if they read the book within a certain time period.
 
-### Example
+### Future Work
+I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
+
+Manual classification of the authors was a big limiting factor for scope. Ideally the recommender could expand beyond 10k books, hopefully this would open up the pool of books that would get recommended and boosted up for the user. Also I would like to include LGBTQ and country of origin in the diversity boost score.
+
+## Example
 
 Okay so now you get the theory, but let's see an example
 
-## Moses (Standard Nerd)
+### Moses (Standard Nerd)
 
 Let me introduce you to our sample user Mr. Moses Marsh our dear instructor who is basic af in his nerdiness.
 
@@ -74,8 +79,3 @@ Yikes that is a lot of white males. Using these percentages, the recommender cre
 ![Standard Nerd Recs - After Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_after_boosting.png)
 
 Now doesn't this look a little more interesting. Happy reading Moses!
-
-### Future Work
-I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
-
-Manual classification of the authors was a big limiting factor for scope. Ideally the recommender could expand beyond 10k books, hopefully this would open up the pool of books that would get recommended and boosted up for the user. Also I would like to include LGBTQ and country of origin in the diversity boost score.
