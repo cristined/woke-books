@@ -59,9 +59,21 @@ Okay so now you get the theory, but let's see an example
 
 Let me introduce you to our sample user Mr. Moses Marsh our dear instructor who is basic af in his nerdiness.
 
+![Standard Nerd](https://github.com/cristined/woke-books/blob/master/img/standard_nerd.png)
+
 So here are his recommendations prior to boosting, I really believe that he could find all of these books himself, in fact he has read some of these and had yet to rate them in goodreads.
 
 ![Standard Nerd Recs - Before Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_before_boosting.png)
+
+Let's look at the current breakdown of authors read.
+
+![Standard Nerd Recs - Books Read](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_books_read.png)
+
+Yikes that is a lot of white males. Using these percentages, the recommender creates a boost between 0 and 1, so for Neil Gaiman he will get a low boost (close to 0) and for Toni Morrison she will get a really high boost (close to 1). So now books by underrepresented demographics with already high ratings will display for the user.
+
+![Standard Nerd Recs - After Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_after_boosting.png)
+
+Now doesn't this look a little more interesting. Happy reading Moses!
 
 ### Future Work
 I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
