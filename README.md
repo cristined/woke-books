@@ -61,7 +61,7 @@ Let me introduce you to our sample user Mr. Moses Marsh our dear instructor who 
 
 So here are his recommendations prior to boosting, I really believe that he could find all of these books himself, in fact he has read some of these and had yet to rate them in goodreads.
 
-![Standard Nerd Recs - Before Boosting](https://github.com/cristined/woke-books/img/standard_nerd_recs_before_boosting.png)
+![Standard Nerd Recs - Before Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_before_boosting.png)
 
 ### Future Work
 I would like to continue to improve on the recommender by including user data, time of ratings, and looking deeper into the text/descriptions of the book instead of using reviews alone to create the genres.
