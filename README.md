@@ -79,3 +79,5 @@ Yikes that is a lot of white males. Using these percentages. The recommender cre
 ![Standard Nerd Recs - After Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_after_boosting.png)
 
 Now doesn't this look a little more interesting. Happy reading Moses!
+
+Also I know Lalita Tademy is a black female, not Asian female but leaving this in as a valid danger of manual classification.
