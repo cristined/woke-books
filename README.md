@@ -74,7 +74,7 @@ Let's look at the current breakdown of authors read.
 
 ![Standard Nerd Recs - Books Read](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_books_read.png)
 
-Yikes that is a lot of white males. Using these percentages, the recommender creates a boost between 0 and 1, so for Neil Gaiman he will get a low boost (close to 0) and for Toni Morrison she will get a really high boost (close to 1). So now books by underrepresented demographics with already high ratings will display for the user.
+Yikes that is a lot of white males. Using these percentages, the recommender creates a boost between 0 and 1, so for Neil Gaiman he will get a low boost (close to 0) and for Octavia Butler she will get a really high boost (close to 1). So now books by underrepresented demographics with already high ratings will display for the user.
 
 ![Standard Nerd Recs - After Boosting](https://github.com/cristined/woke-books/blob/master/img/standard_nerd_recs_after_boosting.png)
 
